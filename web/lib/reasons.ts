@@ -1,0 +1,20 @@
+/** Plan §7.3 — used on both /contact and the enquiry checkout. */
+export const ENQUIRY_REASONS = [
+  "Quotation",
+  "Heavy Machine Rental",
+  "Vehicle Hire",
+  "Truck Hire",
+  "Tractor Hire",
+  "Forklift Hire",
+  "Telehandler & Access Hire",
+  "Crane Hire (Managed)",
+  "Plant Operator Supply",
+  "Site Establishment (Containers)",
+  "HV Cable Testing & Fault Location",
+  "Solar Piling",
+  "Tool Hire",
+  "Long-Term / Project Hire",
+  "Cross-Border Hire",
+  "Careers",
+  "General Enquiry",
+] as const;

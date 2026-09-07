@@ -1,0 +1,36 @@
+# ---- secrets -------------------------------------------------------------
+.env
+.env.*
+!.env.example
+**/.env*.local
+
+# ---- node / next ---------------------------------------------------------
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+
+# ---- large source imagery ------------------------------------------------
+# Committed:  Images/site-ready/  and  Images/web-optimised/  — the uploader needs these.
+# Excluded:   ~115 MB of raw and generated source art. It lives on the build machine.
+#             See HANDOVER.md -> Assets for what each folder holds.
+Images/*.png
+Images/*.jpg
+Images/*.jpeg
+Images/Generated/
+Images/Generated Cinematic Website Images/
+Images/Antigravity/
+Images/Cinematic Images/
+
+# ---- local scratch -------------------------------------------------------
+homepage-preview.html
+*.log
+.DS_Store
+Thumbs.db
+
+# Client register — contains driver names, registrations and VINs.
+# Reference only, never published (plan non-negotiable 5).
+*.xlsx
