@@ -129,10 +129,30 @@ because a bucket is empty or a key is missing.
 the same 50 files into the bucket. Only worth doing if you want Storage to be the primary
 source. The site does not need it.
 
-**Still open on the hero:** the source photo is genuinely dark in its lower half — measured
-brightness 126–159 across the sunset sky, 57–72 across the machines and ground. The scrim has
-been cut back to a left-side wash plus a short foot so the picture is left alone, but this
-wants a human eye on a real monitor before sign-off.
+**Still open — the hero reads black in the automated screenshot. Start here.**
+
+Every measurement says it should not. Verified against a freshly started production server:
+
+| Check | Result |
+|---|---|
+| `/media/hero-home.webp` | HTTP 200, 265,984 bytes |
+| Decoded pixels (canvas sample) | 1915×820, **avg brightness 106**, max 255 |
+| Through `/_next/image?w=3840&q=75` | identical, avg 106 |
+| `.hero__img` computed style | `complete:true`, opacity 1, visible, `object-fit:cover`, rect 1468×801 |
+| Scrim in the served CSS | correct — alpha reaches **0** past 62% horizontal |
+| `elementsFromPoint(1150,300)` | nothing opaque above the image except the transparent scrim |
+
+So the bytes are bright, they reach the element, and nothing covers them — yet the capture is
+black. **Do not "fix" this by lightening the scrim again.** That was chased three times and it
+was the wrong thread; two of those rounds were also judged against a stale `next start` still
+holding port 3010 from an earlier build, so they proved nothing either way.
+
+Next session: **open it in a real browser first.** There is a live possibility the page is
+already correct and only the headless capture is wrong. If it really is black on a monitor,
+look at compositing rather than colour — the `.hero` stacking context, `overflow`, and whether
+`.hero__in` (z-index 2) forms a layer that flattens the sibling image.
+
+Kill stray servers before judging anything: `Get-NetTCPConnection -LocalPort 3010`.
 
 ### 2. Admin password user does not exist yet
 
