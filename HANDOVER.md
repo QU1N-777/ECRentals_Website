@@ -25,9 +25,9 @@ and logistics partner to heavy industry".
 The site is **built and building green** — 104 pages, zero dead links, `tsc` clean. Data lives in
 Supabase Postgres and is fully seeded (11 categories / 62 equipment / 149 tools). There is a
 working admin UI, a quick-quote modal, an itemised enquiry basket, and an email pipeline.
-**Nothing is deployed and no DNS has been touched.** The one visible defect is that
-**images do not render**, because the image files have never been uploaded to storage. That is
-a credentials problem, not a code problem — see *Known issues* below.
+**Nothing is deployed and no DNS has been touched.** All 50 images render — they ship with the
+repo in `web/public/media/` and no credentials are needed to see the site as designed. Storage
+is an *override*, not a dependency; see *How images resolve* below.
 
 ---
 
@@ -93,41 +93,46 @@ Confirm with: `NEXT_PUBLIC_SUPABASE_URL` in `.env.local` → `https://gblryijime
 
 ## Known issues
 
-### 1. Images do not render (the visible one)
+### 1. Images — resolved, but know how they resolve
 
-**Symptom:** every page renders text, layout and navigation correctly, but image frames are
-empty — the hero is a black band, cards have no photography.
+They used to render as empty black frames. The cause was a design mistake of mine, worth
+recording because it is the sort of thing that quietly comes back.
 
-**Cause:** the storage bucket is empty. The database already holds the correct paths
-(`hero-home.webp`, `categories/cat-*.webp`, `equipment/<slug>.webp`), the bucket `site` exists
-and is public, and the policies are in place. **The files themselves were never uploaded**,
-because that needs either the service-role key or a signed-in admin session, and neither was
-available during the build.
+The approved homepage artifact **base64-embedded** every picture straight into the HTML, so it
+was self-contained and always looked right. When that design became a real Next.js site I
+swapped those embeds for Supabase Storage URLs — correct for production, but it made every
+image depend on a bucket upload that needed a service-role key nobody had. The bucket was
+empty, so every request returned **HTTP 400**. The file paths never changed and no file was
+ever lost; what changed was *where the bytes were expected to come from*.
 
-**This is not a code bug.** No component changes are needed.
+**How it works now** — `web/lib/images.ts`, one function, two sources in priority order:
 
-**Fix, option A — one command (needs the service-role key):**
-
-```bash
-cd web
-# add SUPABASE_SERVICE_ROLE_KEY to .env.local first
-node scripts/upload-images.mjs
-```
-
-Uploads **50 files** and wires equipment records to their photos:
-
-| Source | Files | Destination |
+| Stored value | Resolves to | Who writes it |
 |---|---|---|
-| `Images/site-ready/cat-*.webp` | 11 | `categories/cat-*.webp` |
-| `Images/site-ready/*.webp` | 7 | bucket root |
-| `Images/web-optimised/*.webp` | 32 | `equipment/<slug>.webp` |
+| `https://…/storage/v1/…` | used as-is | the admin UI, after an upload |
+| `hero-home.webp` | `/media/hero-home.webp` | the seed data |
 
-Safe to re-run — everything upserts. It prints the target URL first, so a wrong-project
-mistake is obvious immediately.
+So the 50 bundled files in `web/public/media/` (3.7 MB, committed) are the floor. The moment
+someone swaps a picture in `/admin`, that row stores an absolute Storage URL and wins over the
+bundled default — **with no redeploy**. The site can therefore never render a blank frame
+because a bucket is empty or a key is missing.
 
-**Fix, option B — no key at all:** create the admin user (below), sign in at `/admin`,
-and drop all 50 files onto the **bulk uploader** on the Equipment screen. Files are matched
-to records by filename, so `case-cx220c-excavator.webp` finds the right row automatically.
+`web/public/media/` mirrors the database paths exactly:
+
+| Folder | Files |
+|---|---|
+| `media/*.webp` | 7 — hero, section and page banners |
+| `media/categories/cat-*.webp` | 11 — one per equipment category |
+| `media/equipment/<slug>.webp` | 32 — client studio shots, joined by fleet number |
+
+**Optional:** `node web/scripts/upload-images.mjs` (needs `SUPABASE_SERVICE_ROLE_KEY`) pushes
+the same 50 files into the bucket. Only worth doing if you want Storage to be the primary
+source. The site does not need it.
+
+**Still open on the hero:** the source photo is genuinely dark in its lower half — measured
+brightness 126–159 across the sunset sky, 57–72 across the machines and ground. The scrim has
+been cut back to a left-side wash plus a short foot so the picture is left alone, but this
+wants a human eye on a real monitor before sign-off.
 
 ### 2. Admin password user does not exist yet
 
@@ -271,8 +276,8 @@ dedicated operator portraits — the highest-trust image on the site is still mi
 
 ## Suggested next steps, in order
 
-1. **Load the images.** Biggest visible win, ~2 minutes, unblocks any design review.
-2. **Create the admin auth user** so `/admin` is usable.
+1. **Create the admin auth user** so `/admin` is usable — nothing else is blocked by it.
+2. **Eye the hero scrim** on a real monitor; the balance is judgement, not measurement.
 3. **Polish pass (P7)** — motion, four-breakpoint responsive QA, WCAG 2.1 AA, alt text.
 4. **Deploy to a Vercel preview** for sign-off. No DNS involved.
 5. **Wire Resend** and send a live test to a real inbox.

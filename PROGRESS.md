@@ -18,7 +18,7 @@ Overall  ███████████████████████�
 | Equipment categories | **11** |
 | Client-editable content fields | **29** |
 | Security warnings outstanding | **0** |
-| Images actually rendering | **0** ← the one visible defect |
+| Images actually rendering | **50 / 50** — bundled in `web/public/media/` |
 
 ---
 
@@ -28,7 +28,7 @@ Overall  ███████████████████████�
 |---|---|---|---|
 | P0 | Discovery & data foundation | 8/8 | ✅ Complete |
 | P1 | Supabase backend | 9/9 | ✅ Complete |
-| P2 | Brand, design & imagery | 7/9 | 🟡 83% |
+| P2 | Brand, design & imagery | 8/9 | 🟡 89% |
 | P3 | Next.js site build | 8/10 | 🟡 80% |
 | P4 | Enquiry basket & email | 8/9 | 🟡 89% |
 | CR1 | Client revisions — round 1 | 5/5 | ✅ Complete |
@@ -73,14 +73,15 @@ Overall  ███████████████████████�
 
 ## 🟡 In progress
 
-**P2 — Brand, design & imagery (7/9)**
+**P2 — Brand, design & imagery (8/9)**
 - ✅ Tokens, type system, homepage design, 32 studio shots joined to the fleet by fleet number, 33 cinematic images curated, 18 site-ready assets, fleet line-up promoted to hero
 - ⬜ **Coverage map** — build as inline SVG so provinces carry the brand gradient; not a photo
 - 🟡 **Operator photography** — crew shots cover the section; dedicated PPE portraits still the highest-trust gap
 
 **P3 — Next.js site build (8/10)**
 - ✅ Scaffold, typed Supabase client, homepage, catalogue, 11 category pages, 61 item pages, tools catalogue, contact
-- 🟡 **Load the imagery** — now doable from `/admin` with no key at all
+- ✅ **Imagery loaded** — all 50 files ship in `web/public/media/`; Storage overrides them per-item from `/admin`, no redeploy
+- 🟡 **Hero scrim** — cut back to a left wash; the source photo's lower half measures 57–72 brightness, so this needs a human eye before sign-off
 - ⬜ **Deploy to a Vercel preview**
 
 **P4 — Enquiry basket & email (8/9)**
@@ -130,7 +131,7 @@ signed off and the client gives the word.**
 
 | Severity | Item | Effect |
 |---|---|---|
-| 🔴 | **Images not uploaded** | All 104 pages render with empty frames. Two-minute fix — see `HANDOVER.md` |
+| ✅ | ~~Images not uploaded~~ | Fixed. Bundled locally; Storage is now an override, not a dependency — see `HANDOVER.md` |
 | 🔴 | **Admin auth user not created** | `/admin` cannot be signed into. Dashboard → Authentication → Add user |
 | 🟡 | **Asset count 103 vs 108** | A public claim on `/about`. Reconcile register against catalogue |
 | 🟡 | **Client names not cleared** | Projects page stays empty until written permission |
@@ -142,6 +143,6 @@ signed off and the client gives the word.**
 
 ## Next three moves
 
-1. **Load the images** — biggest visible win, unblocks any design review
+1. **Create the admin auth user** — the only thing still blocking `/admin`
 2. **Polish pass (P7)** — the last substantial phase before the design reads as finished
 3. **Vercel preview** for sign-off, with zero DNS involvement

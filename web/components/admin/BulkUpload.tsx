@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
 const BUCKET = "site";
+const PUBLIC = (p: string) =>
+  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${p}`;
 
 type Target = {
   /** filename stem that identifies this target, e.g. "case-cx220c-excavator" */
@@ -77,10 +79,10 @@ export default function BulkUpload({ targets }: { targets: Target[] }) {
       const a = target.apply;
       const { error: dbErr } =
         a.table === "site_content"
-          ? await supabase.from("site_content").update({ value: target.path }).eq("key", a.key)
+          ? await supabase.from("site_content").update({ value: PUBLIC(target.path) }).eq("key", a.key)
           : a.table === "equipment"
-            ? await supabase.from("equipment").update({ image_url: target.path }).eq("id", a.id)
-            : await supabase.from("equipment_categories").update({ image_url: target.path }).eq("id", a.id);
+            ? await supabase.from("equipment").update({ image_url: PUBLIC(target.path) }).eq("id", a.id)
+            : await supabase.from("equipment_categories").update({ image_url: PUBLIC(target.path) }).eq("id", a.id);
 
       out.push({
         file: file.name,

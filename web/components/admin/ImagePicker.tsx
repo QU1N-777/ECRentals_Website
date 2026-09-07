@@ -34,9 +34,7 @@ export default function ImagePicker({
 
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const preview = value
-    ? value.startsWith("http")
-      ? value
-      : `${base}/storage/v1/object/public/${BUCKET}/${value}${bust ? `?v=${bust}` : ""}`
+    ? (value.startsWith("http") ? value : `/media/${value}`) + (bust ? `?v=${bust}` : "")
     : null;
 
   async function upload(file: File) {
@@ -53,17 +51,21 @@ export default function ImagePicker({
 
     setBusy(true);
     // Keep the existing path when replacing, so nothing else needs updating.
-    const path =
-      value && !value.startsWith("http")
+    const existing = value?.includes(`/public/${BUCKET}/`)
+      ? value.split(`/public/${BUCKET}/`)[1].split("?")[0]
+      : value && !value.startsWith("http")
         ? value
-        : folder +
+        : null;
+    const path =
+      existing ??
+      (folder +
           file.name
             .toLowerCase()
             .replace(/\.[^.]+$/, "")
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-|-$/g, "") +
           "." +
-          (file.name.split(".").pop() ?? "webp").toLowerCase();
+          (file.name.split(".").pop() ?? "webp").toLowerCase());
 
     const { error } = await supabaseBrowser()
       .storage.from(BUCKET)
@@ -80,7 +82,8 @@ export default function ImagePicker({
       return;
     }
     setBust(Date.now());
-    onChange(path);
+    // absolute URL, so it wins over the bundled /media default
+    onChange(`${base}/storage/v1/object/public/${BUCKET}/${path}`);
   }
 
   return (
