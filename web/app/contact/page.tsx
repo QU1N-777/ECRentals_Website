@@ -79,7 +79,7 @@ export default async function Contact() {
             </article>
             <article className="pillcard">
               <h2>Yard</h2>
-              <p>{address}</p>
+              <p style={{ whiteSpace: "pre-line" }}>{address}</p>
               <p className="pillcard__c">
                 <a
                   href="https://www.google.com/maps/search/?api=1&query=Cnr+Hertz+%26+Becquerel+Street+Vanderbijlpark"

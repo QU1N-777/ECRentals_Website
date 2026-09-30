@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "logicore-center"
+  },
+  "targets": {
+    "logicore-center": {
+      "hosting": {
+        "ecrentals-target": [
+          "ecrentals"
+        ]
+      }
+    }
+  }
+}

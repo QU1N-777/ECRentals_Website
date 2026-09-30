@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getContent, t, list } from "@/lib/content";
-import { getCategories, getCategoryCounts, getTools } from "@/lib/queries";
+import { getCategories, getCategoryCounts, getTools, getEquipment } from "@/lib/queries";
 import { img } from "@/lib/images";
 import CategoryCard from "@/components/CategoryCard";
+import EquipmentCard from "@/components/EquipmentCard";
 import QuoteButton from "@/components/QuoteButton";
 
 // Rebuild hourly; the admin UI can trigger an on-demand revalidate later.
@@ -23,12 +24,26 @@ const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export default async function Home() {
-  const [c, cats, counts, tools] = await Promise.all([
+  const [c, cats, counts, tools, equipment] = await Promise.all([
     getContent(),
     getCategories(),
     getCategoryCounts(),
     getTools(),
+    getEquipment(),
   ]);
+
+  // Section visibility flags controlled from Admin Content Editor
+  const showTrust = t(c, "home.section.trust.enabled", "true") !== "false";
+  const showFeatured = t(c, "home.section.featured.enabled", "true") !== "false";
+  const showPillars = t(c, "home.section.pillars.enabled", "true") !== "false";
+  const showManaged = t(c, "home.section.managed.enabled", "true") !== "false";
+  const showIndustries = t(c, "home.section.industries.enabled", "true") !== "false";
+  const showOperators = t(c, "home.section.operators.enabled", "true") !== "false";
+  const showTools = t(c, "home.section.tools.enabled", "true") !== "false";
+  const showCta = t(c, "home.section.cta.enabled", "true") !== "false";
+
+  // Filter machines starred as "Featured" in Admin
+  const featuredFleet = equipment.filter((e) => e.featured);
 
   const heroSrc = img(t(c, "home.hero.image", "hero-home.webp"));
   const managedSrc = img(t(c, "home.managed.image", "managed-hire.webp"));
@@ -47,7 +62,7 @@ export default async function Home() {
 
   return (
     <>
-      {/* 1 — HERO */}
+      {/* 1 — HERO (Always Enabled) */}
       <div className="hero">
         {heroSrc && (
           <Image
@@ -81,24 +96,50 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* 2 — TRUST BAND */}
-      <section className="trust" aria-label="Capability summary">
-        <div className="wrap">
-          <ul>
-            {list(c, "home.trust.items", [
-              "Vanderbijlpark-based",
-              "Nationwide delivery",
-              "Cross-border capable",
-              "Operators supplied",
-              "24-hour quote turnaround",
-            ]).map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      {/* 2 — TRUST BAND (Toggleable) */}
+      {showTrust && (
+        <section className="trust" aria-label="Capability summary">
+          <div className="wrap">
+            <ul>
+              {list(c, "home.trust.items", [
+                "Vanderbijlpark-based",
+                "Nationwide delivery",
+                "Cross-border capable",
+                "Operators supplied",
+                "24-hour quote turnaround",
+              ]).map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
-      {/* 3 — EQUIPMENT CATEGORIES */}
+      {/* 2.5 — FEATURED FLEET (Toggleable / Starred in Admin) */}
+      {showFeatured && featuredFleet.length > 0 && (
+        <section className="g-dark" id="featured-fleet" style={{ paddingBlock: "clamp(48px, 6vw, 84px)" }}>
+          <div className="wrap">
+            <div className="rule" />
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow" style={{ marginBottom: 14 }}>Priority Fleet</p>
+                <h2>Featured Machinery</h2>
+                <p>
+                  Key plant and heavy equipment available for immediate project mobilization across Gauteng and national corridors.
+                </p>
+              </div>
+              <Link className="btn btn--ghost" href="/equipment">View All Fleet</Link>
+            </div>
+            <div className="egrid" style={{ marginTop: 24 }}>
+              {featuredFleet.map((item) => (
+                <EquipmentCard key={item.id} item={item} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 3 — EQUIPMENT CATEGORIES (Core - Always Enabled) */}
       <section className="g-black" id="equipment">
         <div className="wrap">
           <div className="rule" />
@@ -130,181 +171,193 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 4 — CAPABILITY PILLARS */}
-      <section className="g-light" id="services">
-        <div className="wrap">
-          <div className="rule" />
-          <div className="sec-head">
-            <div>
-              <p className="eyebrow" style={{ color: "#8A6410", marginBottom: 14 }}>Why EC Rentals</p>
-              <h2>Three things that keep<br />your programme on schedule</h2>
-            </div>
-          </div>
-          <div className="pillars">
-            <div className="pillar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3.5 2" />
-              </svg>
-              <h3>Uptime</h3>
-              <p>
-                We track service intervals and next-service-due per asset, every month. Machines
-                leave the yard serviced to schedule — not serviced when something breaks.
-              </p>
-            </div>
-            <div className="pillar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                <path d="M12 3l8 3.5v5c0 4.6-3.2 8.4-8 9.5-4.8-1.1-8-4.9-8-9.5v-5z" />
-                <path d="M9 12l2.2 2.2L15.5 10" />
-              </svg>
-              <h3>Compliance</h3>
-              <p>
-                Load-test certification, licence currency and operator certification tracked per
-                asset and per operator — because tier-1 sites audit all three before your plant
-                comes through the gate.
-              </p>
-            </div>
-            <div className="pillar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                <path d="M3 20V9l6-4 6 4v11" />
-                <path d="M15 20V12l6 3v5" />
-                <path d="M2 20h20" />
-              </svg>
-              <h3>One partner</h3>
-              <p>
-                Owned fleet, managed hire, certified operators and full container site
-                establishment. One number, one order, one invoice — instead of five suppliers
-                blaming each other.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6 — MANAGED HIRE */}
-      <section className="g-dark">
-        <div className="wrap split">
-          <div>
+      {/* 4 — CAPABILITY PILLARS (Toggleable) */}
+      {showPillars && (
+        <section className="g-light" id="services">
+          <div className="wrap">
             <div className="rule" />
-            <p className="eyebrow" style={{ marginBottom: 14 }}>Managed hire</p>
-            <h2>{t(c, "home.managed.heading", "Don’t see it? We’ll source it.")}</h2>
-            <p>{t(c, "home.managed.body")}</p>
-            <ul className="ticks">
-              <li>Telehandlers from 2.5 t to 10 t</li>
-              <li>Cherry pickers and access platforms to 26 m</li>
-              <li>Mobile cranes to 110 t, with operator and rigging team</li>
-              <li>Full container site establishment — offices, stores, ablutions, kitchens</li>
-            </ul>
-            <QuoteButton>Enquire About Managed Hire</QuoteButton>
-          </div>
-          <div className="shot">
-            {managedSrc && (
-              <Image
-                src={managedSrc}
-                alt="Haulotte telehandler on an industrial steelwork site"
-                width={900}
-                height={600}
-                sizes="(max-width:900px) 100vw, 45vw"
-              />
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* 7 — INDUSTRIES */}
-      <section className="g-black" id="industries">
-        <div className="wrap">
-          <div className="rule" />
-          <div className="sec-head">
-            <div>
-              <p className="eyebrow" style={{ marginBottom: 14 }}>Sectors</p>
-              <h2>Built for the sites<br />that don’t stop</h2>
-              <p>
-                Mining, steel, petrochemical and power run to shutdown windows and audit trails.
-                We supply to that standard.
-              </p>
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow" style={{ color: "#8A6410", marginBottom: 14 }}>Why EC Rentals</p>
+                <h2>Three things that keep<br />your programme on schedule</h2>
+              </div>
+            </div>
+            <div className="pillars">
+              <div className="pillar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3.5 2" />
+                </svg>
+                <h3>Uptime</h3>
+                <p>
+                  We track service intervals and next-service-due per asset, every month. Machines
+                  leave the yard serviced to schedule — not serviced when something breaks.
+                </p>
+              </div>
+              <div className="pillar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <path d="M12 3l8 3.5v5c0 4.6-3.2 8.4-8 9.5-4.8-1.1-8-4.9-8-9.5v-5z" />
+                  <path d="M9 12l2.2 2.2L15.5 10" />
+                </svg>
+                <h3>Compliance</h3>
+                <p>
+                  Load-test certification, licence currency and operator certification tracked per
+                  asset and per operator — because tier-1 sites audit all three before your plant
+                  comes through the gate.
+                </p>
+              </div>
+              <div className="pillar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <path d="M3 20V9l6-4 6 4v11" />
+                  <path d="M15 20V12l6 3v5" />
+                  <path d="M2 20h20" />
+                </svg>
+                <h3>One partner</h3>
+                <p>
+                  Owned fleet, managed hire, certified operators and full container site
+                  establishment. One number, one order, one invoice — instead of five suppliers
+                  blaming each other.
+                </p>
+              </div>
             </div>
           </div>
-          <div className="tiles">
-            {INDUSTRIES.map(([name, blurb]) => (
-              <Link className="tile" key={name} href={`/industries/${slugify(name)}`}>
-                <span className="tile__t">{name}</span>
-                <p className="tile__s">{blurb}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* 9 — OPERATORS */}
-      <section className="g-dark" id="about">
-        <div className="wrap split">
-          <div className="shot">
-            {operatorsSrc && (
-              <Image
-                src={operatorsSrc}
-                alt="Case TLB and crew working a civil roadworks site"
-                width={900}
-                height={600}
-                sizes="(max-width:900px) 100vw, 45vw"
-              />
-            )}
+      {/* 5 — MANAGED HIRE (Toggleable) */}
+      {showManaged && (
+        <section className="g-dark">
+          <div className="wrap split">
+            <div>
+              <div className="rule" />
+              <p className="eyebrow" style={{ marginBottom: 14 }}>Managed hire</p>
+              <h2>{t(c, "home.managed.heading", "Don’t see it? We’ll source it.")}</h2>
+              <p>{t(c, "home.managed.body")}</p>
+              <ul className="ticks">
+                <li>Telehandlers from 2.5 t to 10 t</li>
+                <li>Cherry pickers and access platforms to 26 m</li>
+                <li>Mobile cranes to 110 t, with operator and rigging team</li>
+                <li>Full container site establishment — offices, stores, ablutions, kitchens</li>
+              </ul>
+              <QuoteButton>Enquire About Managed Hire</QuoteButton>
+            </div>
+            <div className="shot">
+              {managedSrc && (
+                <Image
+                  src={managedSrc}
+                  alt="Haulotte telehandler on an industrial steelwork site"
+                  width={900}
+                  height={600}
+                  sizes="(max-width:900px) 100vw, 45vw"
+                />
+              )}
+            </div>
           </div>
-          <div>
+        </section>
+      )}
+
+      {/* 6 — INDUSTRIES (Toggleable) */}
+      {showIndustries && (
+        <section className="g-black" id="industries">
+          <div className="wrap">
             <div className="rule" />
-            <p className="eyebrow" style={{ marginBottom: 14 }}>Operators &amp; site services</p>
-            <h2>{t(c, "home.operators.heading", "The machine is half the job")}</h2>
-            <p>{t(c, "home.operators.body")}</p>
-            <ul className="ticks">
-              <li>Operator placement against telehandlers, TLBs, excavators and ramming rigs</li>
-              <li>Certification and licence currency tracked per operator</li>
-              <li>Site establishment — offices, stores, ablutions and kitchens</li>
-              <li>HV cable testing and fault location by qualified technicians</li>
-            </ul>
-            <Link className="btn btn--ghost" href="/services/operator-supply">Operator Supply</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 10 — TOOL TEASER */}
-      <section className="g-black" id="tools">
-        <div className="wrap">
-          <div className="rule" />
-          <p className="eyebrow" style={{ marginBottom: 14 }}>Tool hire</p>
-          <h2 style={{ fontSize: "clamp(28px,4.4vw,50px)" }}>
-            <span className="num">{tools.length}</span> tools in stock
-          </h2>
-          <p style={{ color: "var(--steel-lift)", maxWidth: "68ch", marginTop: 14 }}>
-            Hand tools, power tools, cable and electrical kit, pipe and hydraulic, measurement,
-            lifting and safety equipment. Search the catalogue and add straight to your enquiry.
-          </p>
-          <div className="chips">
-            {[...toolCats.entries()]
-              .sort((a, b) => b[1] - a[1])
-              .map(([name, n]) => (
-                <span className="chip" key={name}>
-                  {name}
-                  <b className="num">{n}</b>
-                </span>
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow" style={{ marginBottom: 14 }}>Sectors</p>
+                <h2>Built for the sites<br />that don’t stop</h2>
+                <p>
+                  Mining, steel, petrochemical and power run to shutdown windows and audit trails.
+                  We supply to that standard.
+                </p>
+              </div>
+            </div>
+            <div className="tiles">
+              {INDUSTRIES.map(([name, blurb]) => (
+                <Link className="tile" key={name} href={`/industries/${slugify(name)}`}>
+                  <span className="tile__t">{name}</span>
+                  <p className="tile__s">{blurb}</p>
+                </Link>
               ))}
+            </div>
           </div>
-          <div style={{ marginTop: 26 }}>
-            <Link className="btn btn--primary" href="/tools">Search All Tools</Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* 12 — CTA BAND */}
-      <section className="cta">
-        {ctaSrc && (
-          <Image src={ctaSrc} alt="EC Rentals plant working at sunrise" fill sizes="100vw" />
-        )}
-        <div className="wrap">
-          <h2>{t(c, "home.cta.heading", "Tell us what the job needs. We’ll tell you what it takes.")}</h2>
-          <p>{t(c, "home.cta.body")}</p>
-          <QuoteButton variant="plain" className="btn">Request a Quote</QuoteButton>
-        </div>
-      </section>
+      {/* 7 — OPERATORS & SITE SERVICES (Toggleable) */}
+      {showOperators && (
+        <section className="g-dark" id="about">
+          <div className="wrap split">
+            <div className="shot">
+              {operatorsSrc && (
+                <Image
+                  src={operatorsSrc}
+                  alt="Case TLB and crew working a civil roadworks site"
+                  width={900}
+                  height={600}
+                  sizes="(max-width:900px) 100vw, 45vw"
+                />
+              )}
+            </div>
+            <div>
+              <div className="rule" />
+              <p className="eyebrow" style={{ marginBottom: 14 }}>Operators &amp; site services</p>
+              <h2>{t(c, "home.operators.heading", "The machine is half the job")}</h2>
+              <p>{t(c, "home.operators.body")}</p>
+              <ul className="ticks">
+                <li>Operator placement against telehandlers, TLBs, excavators and ramming rigs</li>
+                <li>Certification and licence currency tracked per operator</li>
+                <li>Site establishment — offices, stores, ablutions and kitchens</li>
+                <li>HV cable testing and fault location by qualified technicians</li>
+              </ul>
+              <Link className="btn btn--ghost" href="/services/operator-supply">Operator Supply</Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 8 — TOOL TEASER (Toggleable) */}
+      {showTools && (
+        <section className="g-black" id="tools">
+          <div className="wrap">
+            <div className="rule" />
+            <p className="eyebrow" style={{ marginBottom: 14 }}>Tool hire</p>
+            <h2 style={{ fontSize: "clamp(28px,4.4vw,50px)" }}>
+              <span className="num">{tools.length}</span> tools in stock
+            </h2>
+            <p style={{ color: "var(--steel-lift)", maxWidth: "68ch", marginTop: 14 }}>
+              Hand tools, power tools, cable and electrical kit, pipe and hydraulic, measurement,
+              lifting and safety equipment. Search the catalogue and add straight to your enquiry.
+            </p>
+            <div className="chips">
+              {[...toolCats.entries()]
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, n]) => (
+                  <span className="chip" key={name}>
+                    {name}
+                    <b className="num">{n}</b>
+                  </span>
+                ))}
+            </div>
+            <div style={{ marginTop: 26 }}>
+              <Link className="btn btn--primary" href="/tools">Search All Tools</Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 9 — CTA BAND (Toggleable) */}
+      {showCta && (
+        <section className="cta">
+          {ctaSrc && (
+            <Image src={ctaSrc} alt="EC Rentals plant working at sunrise" fill sizes="100vw" />
+          )}
+          <div className="wrap">
+            <h2>{t(c, "home.cta.heading", "Tell us what the job needs. We’ll tell you what it takes.")}</h2>
+            <p>{t(c, "home.cta.body")}</p>
+            <QuoteButton variant="plain" className="btn">Request a Quote</QuoteButton>
+          </div>
+        </section>
+      )}
     </>
   );
 }

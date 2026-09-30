@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { supabasePublic } from "@/lib/supabase/server";
+import { getFirebaseAdmin } from "@/lib/firebase/server";
 import { img } from "@/lib/images";
 
 export const revalidate = 3600;
@@ -13,12 +13,13 @@ export const metadata: Metadata = {
 };
 
 export default async function Projects() {
-  const { data } = await supabasePublic()
-    .from("projects")
-    .select("*")
-    .eq("published", true)
-    .order("sort_order");
-  const projects = data ?? [];
+  const { db } = getFirebaseAdmin();
+  const snapshot = await db.collection("projects")
+    .where("published", "==", true)
+    .orderBy("sort_order")
+    .get();
+  
+  const projects = snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
   return (
     <>
@@ -78,3 +79,4 @@ export default async function Projects() {
     </>
   );
 }
+

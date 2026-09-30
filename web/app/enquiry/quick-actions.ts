@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { headers } from "next/headers";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { getFirebaseAdmin } from "@/lib/firebase/server";
 
 /**
  * Quick quote — the modal behind every "Request a Quote" / "Enquiry" button.
@@ -68,16 +68,15 @@ export async function submitQuickQuote(raw: unknown): Promise<QuickResult> {
     return { ok: false, error: "Too many requests from this connection. Please phone us instead." };
   }
 
-  const db = supabaseAdmin();
+  const { db } = getFirebaseAdmin();
 
-  // Resolve slugs to titles so the email reads like a person wrote it.
   let titles: string[] = [];
   if (d.categories.length) {
-    const { data } = await db
-      .from("equipment_categories")
-      .select("slug,title")
-      .in("slug", d.categories);
-    const map = new Map((data ?? []).map((c) => [c.slug, c.title]));
+    const snap = await db.collection("equipment_categories")
+      .where("slug", "in", d.categories)
+      .get();
+      
+    const map = new Map(snap.docs.map((c) => [c.data().slug, c.data().title]));
     titles = d.categories.map((s) => map.get(s) ?? s);
   }
 
@@ -92,9 +91,28 @@ export async function submitQuickQuote(raw: unknown): Promise<QuickResult> {
     titles.length ? titles.join("\n") : "No specific categories selected."
   }\n\nHire window: ${window}`;
 
-  const { data: enquiry, error: insErr } = await db
-    .from("enquiries")
-    .insert({
+  try {
+    const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Africa/Johannesburg" })
+      .format(new Date())
+      .replace(/-/g, "");
+    
+    const counterRef = db.collection("counters").doc(`enquiries_${today}`);
+    let seq = 1;
+    await db.runTransaction(async (t) => {
+      const snap = await t.get(counterRef);
+      if (snap.exists) {
+        seq = snap.data()?.val + 1;
+        t.update(counterRef, { val: seq });
+      } else {
+        t.set(counterRef, { val: 1 });
+      }
+    });
+
+    const reference = `ECR-ENQ-${today}-${String(seq).padStart(4, "0")}`;
+    const submitted_at = new Date().toISOString();
+
+    const enquiryData = {
+      reference,
       name: d.name,
       email: d.email,
       phone: d.phone,
@@ -106,26 +124,45 @@ export async function submitQuickQuote(raw: unknown): Promise<QuickResult> {
       delivery_site: d.location || null,
       notes: d.notes || null,
       items_summary: itemsSummary,
+      status: "New",
+      submitted_at,
       consent: true,
       source_ip: ip === "unknown" ? null : ip,
       user_agent: h.get("user-agent")?.slice(0, 500) ?? null,
-    })
-    .select("id,reference,submitted_at")
-    .single();
+      items: [] // empty for quick quotes, they just have categories
+    };
 
-  if (insErr || !enquiry) {
-    console.error("quick quote insert failed:", insErr?.message);
+    const docRef = await db.collection("enquiries").add(enquiryData);
+
+    const taskId = `tsk-${Date.now()}`;
+    await db.collection("logicore_tasks").doc(taskId).set({
+      task_id: taskId,
+      title: `Quick Quote: ${reference} - ${d.name}`,
+      description: `Reason: ${d.reason}\nPhone: ${d.phone}\nEmail: ${d.email}\nNotes: ${d.notes || 'None'}\n\nCategories:\n${itemsSummary}`,
+      priority: "Medium",
+      status: "To Do",
+      assigned_to: "usr-admin",
+      created_by: "system_website",
+      created_at: submitted_at,
+      due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      progress: 0,
+      subtasks: [],
+      attachments: [],
+      category: "Sales",
+      location_ref: "loc-hq"
+    });
+
+    try {
+      await notify(d, titles, window, reference, submitted_at);
+    } catch (e) {
+      console.error("quick quote email failed:", e);
+    }
+
+    return { ok: true, reference };
+  } catch (error: any) {
+    console.error("quick quote insert failed:", error.message);
     return { ok: false, error: "We couldn't save that. Please phone us on +27 66 429 5788." };
   }
-
-  // Best-effort: the request is already saved, so a mail failure never loses it.
-  try {
-    await notify(d, titles, window, enquiry.reference, enquiry.submitted_at);
-  } catch (e) {
-    console.error("quick quote email failed:", e);
-  }
-
-  return { ok: true, reference: enquiry.reference };
 }
 
 async function notify(
@@ -143,8 +180,9 @@ async function notify(
   const { Resend } = await import("resend");
   const resend = new Resend(key);
 
-  const { data } = await supabaseAdmin().from("settings").select("key,value");
-  const s = Object.fromEntries((data ?? []).map((r) => [r.key, r.value ?? ""]));
+  const { db } = getFirebaseAdmin();
+  const snap = await db.collection("settings").get();
+  const s = Object.fromEntries(snap.docs.map((r) => [r.id, r.data().value ?? ""]));
 
   const from = s["enquiry.from_address"] || "enquiries@mail.ecrentals.co.za";
   const replyTo = s["enquiry.reply_to"] || "info@ecrentals.co.za";

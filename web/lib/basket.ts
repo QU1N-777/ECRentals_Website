@@ -18,13 +18,13 @@ function read(): BasketLine[] {
   }
 }
 
-function write(lines: BasketLine[]) {
+function write(lines: BasketLine[], action?: string) {
   try {
     sessionStorage.setItem(KEY, JSON.stringify(lines));
   } catch {
     /* private mode, quota — the basket is a convenience, never block the UI */
   }
-  window.dispatchEvent(new CustomEvent(BASKET_EVENT));
+  window.dispatchEvent(new CustomEvent(BASKET_EVENT, { detail: { action } }));
 }
 
 export const getBasket = read;
@@ -35,7 +35,7 @@ export function addToBasket(line: BasketLine) {
   const i = lines.findIndex((l) => l.equipmentId === line.equipmentId);
   if (i >= 0) lines[i] = { ...lines[i], qty: lines[i].qty + line.qty };
   else lines.push(line);
-  write(lines);
+  write(lines, "add");
 }
 
 export function updateLine(equipmentId: string, patch: Partial<BasketLine>) {

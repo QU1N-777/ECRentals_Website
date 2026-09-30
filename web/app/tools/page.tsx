@@ -16,7 +16,7 @@ export default async function ToolsPage() {
 
   return (
     <>
-      <section className="pagehead">
+      <section className="pagehead pagehead--tools">
         <div className="wrap">
           <div className="rule" />
           <p className="eyebrow" style={{ marginBottom: 14 }}>Tool hire</p>
@@ -30,7 +30,7 @@ export default async function ToolsPage() {
         </div>
       </section>
 
-      <section className="g-black">
+      <section className="g-black tools-section">
         <div className="wrap">
           <ToolSearch tools={tools} />
 

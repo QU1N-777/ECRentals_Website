@@ -1,11 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/browser";
+import { getFirebaseClient } from "@/lib/firebase/client";
+import { ref, uploadBytes } from "firebase/storage";
+import { doc, updateDoc } from "firebase/firestore";
 
 const BUCKET = "site";
-const PUBLIC = (p: string) =>
-  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${p}`;
+const PUBLIC = (p: string) => {
+  const bucket = `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebasestorage.app`;
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(p)}?alt=media`;
+};
 
 type Target = {
   /** filename stem that identifies this target, e.g. "case-cx220c-excavator" */
@@ -44,7 +48,7 @@ export default function BulkUpload({ targets }: { targets: Target[] }) {
     setResults([]);
     setProgress({ done: 0, total: list.length });
 
-    const supabase = supabaseBrowser();
+    const { db, storage } = getFirebaseClient();
     const index = new Map(targets.map((t) => [t.key, t]));
     const out: Result[] = [];
 
@@ -59,15 +63,19 @@ export default function BulkUpload({ targets }: { targets: Target[] }) {
         continue;
       }
 
-      const { error: upErr } = await supabase.storage
-        .from(BUCKET)
-        .upload(target.path, file, { upsert: true, cacheControl: "31536000", contentType: file.type });
+      let upErr: any = null;
+      try {
+        const storageRef = ref(storage, target.path);
+        await uploadBytes(storageRef, file, { contentType: file.type });
+      } catch (e: any) {
+        upErr = e;
+      }
 
       if (upErr) {
         out.push({
           file: file.name,
           status: "fail",
-          note: /row-level security|not authorized/i.test(upErr.message)
+          note: /unauthorized|permission/i.test(upErr.message)
             ? "Refused — your account is not an admin"
             : upErr.message,
         });
@@ -77,12 +85,18 @@ export default function BulkUpload({ targets }: { targets: Target[] }) {
       }
 
       const a = target.apply;
-      const { error: dbErr } =
-        a.table === "site_content"
-          ? await supabase.from("site_content").update({ value: PUBLIC(target.path) }).eq("key", a.key)
-          : a.table === "equipment"
-            ? await supabase.from("equipment").update({ image_url: PUBLIC(target.path) }).eq("id", a.id)
-            : await supabase.from("equipment_categories").update({ image_url: PUBLIC(target.path) }).eq("id", a.id);
+      let dbErr: any = null;
+      try {
+        if (a.table === "site_content") {
+          await updateDoc(doc(db, "site_content", a.key), { value: PUBLIC(target.path) });
+        } else if (a.table === "equipment") {
+          await updateDoc(doc(db, "equipment", a.id), { image_url: PUBLIC(target.path) });
+        } else {
+          await updateDoc(doc(db, "equipment_categories", a.id), { image_url: PUBLIC(target.path) });
+        }
+      } catch (e: any) {
+        dbErr = e;
+      }
 
       out.push({
         file: file.name,

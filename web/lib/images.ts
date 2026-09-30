@@ -18,6 +18,15 @@ const BUCKET = "site";
  */
 export function img(path: string | null | undefined): string | null {
   if (!path) return null;
+  // If a Firebase Storage URL was stored in the database, extract the bare filename
+  // so it maps to the bundled starter set in /media/
+  if (path.includes("firebasestorage.googleapis.com")) {
+    const match = path.match(/\/o\/([^?]+)/);
+    if (match && match[1]) {
+      const decoded = decodeURIComponent(match[1]);
+      return `/media/${decoded}`;
+    }
+  }
   if (path.startsWith("http")) return path;
   if (path.startsWith("/")) return path;
   return `/media/${path}`;
@@ -25,7 +34,8 @@ export function img(path: string | null | undefined): string | null {
 
 /** Absolute public URL for an object in the storage bucket. */
 export function storageUrl(path: string): string {
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+  const bucket = `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebasestorage.app`;
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media`;
 }
 
 export { BUCKET };

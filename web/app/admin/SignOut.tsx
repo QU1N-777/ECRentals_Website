@@ -1,6 +1,7 @@
 "use client";
 
-import { supabaseBrowser } from "@/lib/supabase/browser";
+import { getFirebaseClient } from "@/lib/firebase/client";
+import { signOut as firebaseSignOut } from "firebase/auth";
 
 export default function SignOut() {
   return (
@@ -8,8 +9,14 @@ export default function SignOut() {
       type="button"
       className="adm__signout"
       onClick={async () => {
-        await supabaseBrowser().auth.signOut();
-        window.location.href = "/admin";
+        try {
+          const { auth } = getFirebaseClient();
+          await firebaseSignOut(auth);
+          await fetch("/api/session", { method: "DELETE" });
+          window.location.href = "/admin";
+        } catch (error) {
+          console.error(error);
+        }
       }}
     >
       Sign out

@@ -1,17 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/browser";
+import { getFirebaseClient } from "@/lib/firebase/client";
+import { signInWithEmailAndPassword, sendSignInLinkToEmail, signOut as firebaseSignOut } from "firebase/auth";
 
 type Mode = "password" | "link";
 
-/**
- * Two ways in.
- *  - Password: the everyday route for EC Rentals staff.
- *  - Magic link: no password to remember or reset, useful for occasional users
- *    and as a recovery path if a password is forgotten.
- * Either way, the address must be on the admin allowlist.
- */
 export default function LoginPanel({ signedInAs }: { signedInAs: string | null }) {
   const [mode, setMode] = useState<Mode>("password");
   const [email, setEmail] = useState("");
@@ -20,42 +14,64 @@ export default function LoginPanel({ signedInAs }: { signedInAs: string | null }
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  async function establishSessionCookie(idToken: string) {
+    const res = await fetch("/api/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+    });
+    if (!res.ok) throw new Error("Failed to establish secure session.");
+  }
+
   async function signInWithPassword(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setErr(null);
-    const { error } = await supabaseBrowser().auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    setBusy(false);
-    if (error) {
+    try {
+      const { auth } = getFirebaseClient();
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const idToken = await userCredential.user.getIdToken();
+      await establishSessionCookie(idToken);
+      window.location.href = "/admin";
+    } catch (error: any) {
       setErr(
-        /invalid login credentials/i.test(error.message)
+        /invalid-credential/i.test(error.code)
           ? "That email and password combination was not recognised."
           : error.message
       );
-      return;
+    } finally {
+      setBusy(false);
     }
-    window.location.href = "/admin";
   }
 
   async function sendLink(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setErr(null);
-    const { error } = await supabaseBrowser().auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/admin` },
-    });
-    setBusy(false);
-    if (error) setErr(error.message);
-    else setSent(true);
+    try {
+      const { auth } = getFirebaseClient();
+      await sendSignInLinkToEmail(auth, email.trim(), {
+        url: `${window.location.origin}/admin`,
+        handleCodeInApp: true,
+      });
+      window.localStorage.setItem("emailForSignIn", email.trim());
+      setSent(true);
+    } catch (error: any) {
+      setErr(error.message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function signOut() {
-    await supabaseBrowser().auth.signOut();
-    window.location.reload();
+    try {
+      const { auth } = getFirebaseClient();
+      await firebaseSignOut(auth);
+      await fetch("/api/session", { method: "DELETE" });
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   return (
@@ -157,3 +173,4 @@ export default function LoginPanel({ signedInAs }: { signedInAs: string | null }
     </div>
   );
 }
+

@@ -3,6 +3,10 @@
 .env.*
 !.env.example
 **/.env*.local
+*serviceAccount*.json
+**/*serviceAccount*.json
+.firebase/
+**/.firebase/
 
 # ---- node / next ---------------------------------------------------------
 node_modules/
@@ -34,3 +38,6 @@ Thumbs.db
 # Client register — contains driver names, registrations and VINs.
 # Reference only, never published (plan non-negotiable 5).
 *.xlsx
+
+# Separate LogiCore repo directory
+LogiCore/

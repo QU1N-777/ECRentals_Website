@@ -1,0 +1,63 @@
+{
+    "indexes":  [
+                    {
+                        "collectionGroup":  "equipment",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "active",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "sort_order",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "equipment_categories",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "active",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "sort_order",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "tools",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "active",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "title",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "projects",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "published",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "sort_order",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    }
+                ],
+    "fieldOverrides":  [
+
+                       ]
+}

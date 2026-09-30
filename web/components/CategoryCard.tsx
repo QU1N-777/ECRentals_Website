@@ -12,7 +12,7 @@ export default function CategoryCard({
   count: number;
   priority?: boolean;
 }) {
-  const src = img(category.image_url);
+  const src = img(category.image_url || "managed-hire.webp");
   return (
     <Link className="card" href={`/equipment#${category.slug}`}>
       <div className="card__img">

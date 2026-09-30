@@ -1,89 +1,71 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/browser";
+import ImageEditorModal from "./ImageEditorModal";
 
-const BUCKET = "site";
-const MAX_BYTES = 8 * 1024 * 1024;
+const MAX_BYTES = 12 * 1024 * 1024;
 const OK_TYPES = ["image/webp", "image/jpeg", "image/png", "image/avif", "image/svg+xml"];
 
-/**
- * Drag-and-drop image replacement.
- *
- * Uploads run as the signed-in admin against a storage RLS policy — there is
- * no service-role key in the browser. The database stores a bare path, so the
- * bucket can move without a data migration.
- */
 export default function ImagePicker({
   value,
-  folder = "",
+  folder = "equipment/",
   onChange,
   hint,
+  itemTitle = "Equipment",
+  itemSlug = "equipment",
 }: {
   value: string | null;
-  /** e.g. "categories/" or "equipment/" */
   folder?: string;
   onChange: (path: string) => void;
   hint?: string;
+  itemTitle?: string;
+  itemSlug?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [over, setOver] = useState(false);
-  const [bust, setBust] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const preview = value
-    ? (value.startsWith("http") ? value : `/media/${value}`) + (bust ? `?v=${bust}` : "")
+    ? value.startsWith("http")
+      ? value
+      : `/media/${value}`
     : null;
 
-  async function upload(file: File) {
+  async function directUpload(file: File) {
     setErr(null);
 
     if (!OK_TYPES.includes(file.type)) {
-      setErr("Use a WebP, JPEG, PNG, AVIF or SVG file.");
+      setErr("Use a WebP, JPEG, PNG, or AVIF file.");
       return;
     }
     if (file.size > MAX_BYTES) {
-      setErr(`That file is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 8 MB.`);
+      setErr(`File size is ${(file.size / 1024 / 1024).toFixed(1)} MB. Max limit is 12 MB.`);
       return;
     }
 
     setBusy(true);
-    // Keep the existing path when replacing, so nothing else needs updating.
-    const existing = value?.includes(`/public/${BUCKET}/`)
-      ? value.split(`/public/${BUCKET}/`)[1].split("?")[0]
-      : value && !value.startsWith("http")
-        ? value
-        : null;
-    const path =
-      existing ??
-      (folder +
-          file.name
-            .toLowerCase()
-            .replace(/\.[^.]+$/, "")
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-|-$/g, "") +
-          "." +
-          (file.name.split(".").pop() ?? "webp").toLowerCase());
 
-    const { error } = await supabaseBrowser()
-      .storage.from(BUCKET)
-      .upload(path, file, { upsert: true, cacheControl: "31536000", contentType: file.type });
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", folder);
 
-    setBusy(false);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (error) {
-      setErr(
-        /row-level security|not authorized/i.test(error.message)
-          ? "Upload refused — your account is not on the admin allowlist."
-          : error.message
-      );
-      return;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+
+      onChange(data.url);
+    } catch (e: any) {
+      setErr(e.message || "Failed to upload image.");
+    } finally {
+      setBusy(false);
     }
-    setBust(Date.now());
-    // absolute URL, so it wins over the bundled /media default
-    onChange(`${base}/storage/v1/object/public/${BUCKET}/${path}`);
   }
 
   return (
@@ -99,15 +81,15 @@ export default function ImagePicker({
           e.preventDefault();
           setOver(false);
           const f = e.dataTransfer.files?.[0];
-          if (f) void upload(f);
+          if (f) void directUpload(f);
         }}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => setModalOpen(true)}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            inputRef.current?.click();
+            setModalOpen(true);
           }
         }}
       >
@@ -115,9 +97,40 @@ export default function ImagePicker({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt="" className="ipick__img" />
         ) : (
-          <span className="ipick__empty">No image yet</span>
+          <span className="ipick__empty">No image set</span>
         )}
-        <span className="ipick__overlay">{busy ? "Uploading…" : "Drop a file or click"}</span>
+        <span className="ipick__overlay">
+          {busy ? "Uploading…" : preview ? "Click to Move, Zoom & Frame" : "Click or Drop to Add Photo"}
+        </span>
+      </div>
+
+      <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          style={{ fontSize: "11px", padding: "6px 10px" }}
+          onClick={() => setModalOpen(true)}
+        >
+          📐 Frame, Crop & Zoom
+        </button>
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          style={{ fontSize: "11px", padding: "6px 10px" }}
+          onClick={() => inputRef.current?.click()}
+        >
+          Quick Upload File
+        </button>
+        {value && (
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            style={{ fontSize: "11px", padding: "6px 10px", color: "#ef4444" }}
+            onClick={() => onChange("")}
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       <input
@@ -127,14 +140,25 @@ export default function ImagePicker({
         hidden
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) void upload(f);
+          if (f) void directUpload(f);
           e.target.value = "";
         }}
       />
 
-      <p className="ipick__path">{value || "—"}</p>
+      <p className="ipick__path">{value || "No image assigned"}</p>
       {hint && !err && <p className="ipick__hint">{hint}</p>}
       {err && <p className="ipick__err" role="alert">{err}</p>}
+
+      {/* Interactive Move, Crop, Zoom & Pan Editor Modal */}
+      <ImageEditorModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        currentImageUrl={value}
+        itemTitle={itemTitle}
+        itemSlug={itemSlug}
+        folder={folder}
+        onSave={(newUrl) => onChange(newUrl)}
+      />
     </div>
   );
 }

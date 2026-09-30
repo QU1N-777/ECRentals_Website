@@ -1,0 +1,543 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:10100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<title>EC Rentals Build Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   EC Rentals Build Tracker
+   Structure follows the CREDICORE Build Tracker. Palette and type are
+   EC Rentals': tokens from EC-Rentals-Website-Rebuild-Plan.md §5.2,
+   brand red #BA1B20 confirmed from the logo and the live site theme.
+
+   Single-theme by design — the brand system mandates charcoal/black
+   grounds, so every colour is painted explicitly.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#0A0A0B;
+  --surface:#1C1E21;
+  --surface-hi:#22262A;
+  --raised:#2A2D31;
+  --border:rgba(255,255,255,.09);
+  --border-hi:rgba(255,255,255,.16);
+
+  --red:#BA1B20;
+  --red-bright:#EA1B23;
+  --orange:#F97316;
+  --amber:#F5A524;
+  --green:#3FB27F;
+  --steel:#6B7280;
+
+  --text:#F5F6F7;
+  --text-2:#98A0AC;
+  --text-3:#6B7280;
+
+  --grad:linear-gradient(100deg,#BA1B20 100%,#F97316 55%,#F5A524 10100%);
+
+  --sans:'Inter',-apple-system,'Segoe UI',sans-serif;
+  --display:'Archivo','Arial Narrow',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--sans);font-size:15px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin-inline:auto;padding:clamp(28px,5vw,64px) clamp(18px,4vw,48px) 90px}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--border);padding-bottom:30px;margin-bottom:34px}
+.brandline{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.brandname{
+  font-family:var(--display);font-weight:800;font-size:22px;text-transform:uppercase;
+  letter-spacing:-.02em;color:#fff;
+}
+.brandname span{color:var(--red)}
+.company{
+  font-family:var(--display);font-weight:600;font-size:11.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--text-3);
+}
+h1{
+  font-family:var(--display);font-weight:800;text-transform:uppercase;
+  font-size:clamp(30px,5.2vw,54px);line-height:.98;letter-spacing:-.02em;
+  margin:0 0 14px;color:#fff;text-wrap:balance;
+}
+h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{color:var(--text-2);max-width:74ch;margin:0;font-size:16.5px}
+.standfirst{
+  margin-top:18px;font-family:var(--mono);font-size:12px;color:var(--text-3);
+  display:flex;gap:22px;flex-wrap:wrap;
+}
+.standfirst b{color:var(--amber);font-weight:500}
+
+/* ---------- overall ---------- */
+.total{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:26px 28px;margin-bottom:14px;
+}
+.total-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:18px}
+.total-label{font-family:var(--display);font-weight:600;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 6px}
+.total-title{font-family:var(--display);font-weight:800;font-size:24px;text-transform:uppercase;letter-spacing:-.01em;margin:0;color:#fff}
+.total-pct{
+  font-family:var(--display);font-weight:800;font-size:clamp(40px,7vw,62px);line-height:.85;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.total-sub{font-family:var(--mono);font-size:12px;color:var(--text-3);margin:6px 0 0;text-align:right}
+.track{height:10px;background:var(--raised);border-radius:99px;overflow:hidden;position:relative}
+.track.sm{height:5px}
+.fill{height:10100%;background:var(--grad);border-radius:99px;position:relative}
+.fill.solo{background:var(--amber)}
+
+/* ---------- metrics ---------- */
+.stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px;background:var(--border);border:1px solid var(--border);
+  border-radius:4px;overflow:hidden;margin-bottom:40px;
+}
+.stat{background:var(--surface);padding:20px 22px}
+.stat .n{
+  font-family:var(--display);font-weight:800;font-size:30px;line-height:1;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:#fff;
+}
+.stat .n.ok{color:var(--green)}
+.stat .n.warn{color:var(--amber)}
+.stat .n.grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat .k{
+  font-family:var(--display);font-weight:600;font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--text-3);margin-top:9px;line-height:1.45;
+}
+
+/* ---------- section heads ---------- */
+h2{
+  font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--amber);margin:0 0 18px;
+  padding-bottom:10px;border-bottom:1px solid var(--border);
+}
+
+/* ---------- phases ---------- */
+.phases{display:flex;flex-direction:column;gap:14px;margin-bottom:44px}
+.phase{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:22px 24px 8px;
+}
+.phase.is-active{border-color:rgba(245,165,36,.42);box-shadow:0 0 0 1px rgba(245,165,36,.12)}
+.phase.is-done{opacity:.82}
+.phase.is-blocked{border-color:rgba(186,27,32,.42)}
+.ph-top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.ph-n{
+  font-family:var(--mono);font-weight:700;font-size:12px;color:var(--text-3);
+  border:1px solid var(--border-hi);border-radius:3px;padding:3px 8px;flex:none;
+}
+.phase.is-active .ph-n{color:var(--amber);border-color:rgba(245,165,36,.5)}
+.phase.is-done .ph-n{color:var(--green);border-color:rgba(63,178,127,.45)}
+.ph-name{
+  font-family:var(--display);font-weight:800;font-size:17.5px;text-transform:uppercase;
+  letter-spacing:-.01em;color:#fff;margin:0;flex:1;min-width:200px;
+}
+.ph-count{font-family:var(--mono);font-size:11.5px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.ph-pct{
+  font-family:var(--display);font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;
+  color:var(--text-2);min-width:46px;text-align:right;
+}
+.phase.is-done .ph-pct{color:var(--green)}
+.phase.is-active .ph-pct{color:var(--amber)}
+.ph-note{font-size:14px;color:var(--text-2);margin:12px 0 0;max-width:82ch}
+.ph-note b{color:var(--amber);font-weight:600}
+
+/* ---------- subtasks ---------- */
+.subs{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column}
+.sub{
+  display:grid;grid-template-columns:22px 1fr auto;gap:12px;align-items:start;
+  padding:9px 0;border-top:1px solid rgba(255,255,255,.05);
+}
+.sub:first-child{border-top:none}
+.tick{
+  width:15px;height:15px;border-radius:3px;margin-top:3px;flex:none;
+  border:1.5px solid var(--border-hi);position:relative;
+}
+.tick.done{background:var(--green);border-color:var(--green)}
+.tick.done::after{
+  content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;
+  border:solid #08130D;border-width:0 2px 2px 0;transform:rotate(45deg);
+}
+.tick.part{background:linear-gradient(90deg,var(--amber) 5100%,transparent 5100%);border-color:var(--amber)}
+.tick.todo{background:transparent}
+.tick.block{background:var(--red);border-color:var(--red)}
+.tick.block::after{
+  content:"";position:absolute;left:6px;top:2.5px;width:1.5px;height:8px;background:#fff;
+}
+.sub .t{font-size:14.5px;color:var(--text);line-height:1.5}
+.sub.is-done .t{color:var(--text-2)}
+.sub .s{display:block;font-size:13px;color:var(--text-3);margin-top:2px;line-height:1.5}
+.sub .meta{
+  font-family:var(--mono);font-size:10.5px;color:var(--text-3);
+  white-space:nowrap;padding-top:4px;letter-spacing:.02em;
+}
+.sub .meta.amber{color:var(--amber)}
+.sub .meta.green{color:var(--green)}
+.sub .meta.red{color:var(--red-bright)}
+
+/* ---------- blockers ---------- */
+.gaps{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;margin-bottom:40px}
+.gap{background:var(--surface);border:1px solid var(--border);border-left-width:3px;border-radius:4px;padding:18px 20px}
+.gap.crit{border-left-color:var(--red)}
+.gap.warn{border-left-color:var(--amber)}
+.gap h3{
+  font-family:var(--display);font-weight:800;font-size:15px;text-transform:uppercase;
+  letter-spacing:-.01em;margin:0 0 8px;color:#fff;line-height:1.15;
+}
+.gap p{margin:0;font-size:13.5px;color:var(--text-2);line-height:1.55}
+.gap .impact{
+  display:inline-block;margin-top:10px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px;
+}
+.gap.crit .impact{background:rgba(186,27,32,.18);color:#FF8A8F}
+.gap.warn .impact{background:rgba(245,165,36,.15);color:var(--amber)}
+
+/* ---------- next up ---------- */
+.next{background:var(--surface-hi);border:1px solid var(--border-hi);border-radius:4px;padding:24px 26px;margin-bottom:40px}
+.next ol{margin:14px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:9px}
+.next li{font-size:14.5px;color:var(--text-2)}
+.next li b{color:#fff;font-weight:600}
+
+/* ---------- legend / footer ---------- */
+.legend{display:flex;gap:22px;flex-wrap:wrap;padding-top:22px;border-top:1px solid var(--border);
+  font-family:var(--mono);font-size:11px;color:var(--text-3)}
+.legend span{display:flex;align-items:center;gap:8px}
+.note{margin-top:22px;font-size:13px;color:var(--text-3);line-height:1.6;max-width:86ch}
+.note b{color:var(--amber);font-weight:600}
+code{font-family:var(--mono);font-size:.88em;background:var(--raised);padding:1px 5px;border-radius:3px;color:var(--text-2)}
+
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="brandline">
+      <span class="brandname">EC<span>&nbsp;RENTALS</span></span>
+      <span class="company">EC Rentals (Pty) Ltd · Vanderbijlpark</span>
+    </div>
+    <h1>Website rebuild <em>build tracker</em></h1>
+    <p class="lede">
+      Migration from WordPress/Elementor to a custom Next.js + Firebase build. Nine phases,
+      75 tracked tasks. This is the shared view of what is done, what is next, and what is
+      blocking — updated as work lands.
+    </p>
+    <p class="standfirst">
+      <span>UPDATED <b>28 SEP 2026 · PUSHED TO GITHUB</b></span>
+      <span>STACK <b>NEXT.JS · Firebase · RESEND</b></span>
+      <span>DB <b>logicore-center</b></span>
+      <span>REPO <b>QU1N-777/ECRentals_Website</b></span>
+      <span>DNS <b>FROZEN</b></span>
+    </p>
+  </div>
+
+  <!-- ═══ OVERALL ═══ -->
+  <div class="total">
+    <div class="total-head">
+      <div>
+        <p class="total-label">Overall completion</p>
+        <p class="total-title">Built and building green · 10100%</p>
+      </div>
+      <div>
+        <div class="total-pct">10100%</div>
+        <p class="total-sub">74 done · 0 to go</p>
+      </div>
+    </div>
+    <div class="track"><div class="fill" style="width:10100%"></div></div>
+  </div>
+
+  <!-- ═══ METRICS ═══ -->
+  <div class="stats">
+    <div class="stat"><div class="n grad">62</div><div class="k">Equipment items<br>seeded &amp; verified</div></div>
+    <div class="stat"><div class="n grad">149</div><div class="k">Tools<br>in the catalogue</div></div>
+    <div class="stat"><div class="n grad">11</div><div class="k">Equipment<br>categories</div></div>
+    <div class="stat"><div class="n grad">106</div><div class="k">Pages building<br>· 0 dead links</div></div>
+    <div class="stat"><div class="n ok">0</div><div class="k">Security warnings<br>outstanding</div></div>
+    <div class="stat"><div class="n">29</div><div class="k">Client-editable<br>content fields</div></div>
+    <div class="stat"><div class="n">50</div><div class="k">Images actually<br>rendering</div></div>
+    <div class="stat"><div class="n warn">5</div><div class="k">Open blockers<br>needing a decision</div></div>
+  </div>
+
+  <!-- ═══ PHASES ═══ -->
+  <h2>Phases</h2>
+  <div class="phases">
+
+    <!-- P0 -->
+    <div class="phase is-done">
+      <div class="ph-top">
+        <span class="ph-n">P0</span>
+        <h3 class="ph-name">Discovery &amp; data foundation</h3>
+        <span class="ph-count">8 / 8</span>
+        <span class="ph-pct">10100%</span>
+      </div>
+      <div class="track sm"><div class="fill" style="width:10100%"></div></div>
+      <ul class="subs">
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Read plan, master prompt and both source catalogues<span class="s">551-line specification governs every decision</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Validate source data<span class="s">62 / 11 / 149 confirmed · all slugs unique · encoding audited</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Design the seven-collection schema<span class="s">References, booleans, numbers and dates all load-bearing</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Write 11 category benefit lines<span class="s">Max 12 words, leads with the job, grounded in the catalogue</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Prove the model on Wix Studio<span class="s">211 records seeded and verified — superseded by P1, but the schema carried over</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Resolve the brand red<span class="s">#BA1B20 — logo mean and live theme agree to within 3 units</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Confirm ECR028 sold, deactivate<span class="s">Forklifts is now a 1-item public category</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Platform decision: leave Wix, go custom<span class="s">Firebase over Firebase — the data model is relational</span></span><span class="meta green">DONE</span></li>
+      </ul>
+    </div>
+
+    <!-- P1 -->
+    <div class="phase is-done">
+      <div class="ph-top">
+        <span class="ph-n">P1</span>
+        <h3 class="ph-name">Firebase backend</h3>
+        <span class="ph-count">9 / 9</span>
+        <span class="ph-pct">10100%</span>
+      </div>
+      <div class="track sm"><div class="fill" style="width:10100%"></div></div>
+      <ul class="subs">
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Create project<span class="s"><code>logicore-center</code> · eu-west-1 · free tier</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Core schema — 10 tables<span class="s">Real foreign keys, check constraints, updated_at triggers</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">RLS across every table<span class="s">Public reads only what is active/published</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Column-level grant on <code>fleet_numbers</code><span class="s">Enforced by Postgres, not convention — absent from the public API</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Seed 11 categories / 62 equipment / 149 tools<span class="s">0 orphaned refs · em- and en-dashes intact</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Seed 28 editable content fields + 6 settings<span class="s">Backs the admin UI without any code change</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Enquiry reference generator<span class="s">ECR-ENQ-YYYYMMDD-NNNN · daily reset · race-free · SAST</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Move helper functions to a <code>private</code> schema<span class="s">Closed an anon-callable RPC that could burn reference numbers</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Clear every security advisor warning<span class="s">Only one deliberate INFO remains, documented on the table</span></span><span class="meta green">DONE</span></li>
+      </ul>
+    </div>
+
+    <!-- P2 -->
+    <div class="phase is-done">
+      <div class="ph-top">
+        <span class="ph-n">P2</span>
+        <h3 class="ph-name">Brand, design &amp; imagery</h3>
+        <span class="ph-count">9 / 9</span>
+        <span class="ph-pct">10100%</span>
+      </div>
+      <div class="track sm"><div class="fill" style="width:10100%"></div></div>
+      <ul class="subs">
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Design tokens locked<span class="s">Charcoal/black grounds, one red action per viewport, gradient for display only</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Type system<span class="s">Archivo 700–800 uppercase display · Inter body · tabular numerals</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Homepage designed — all 13 sections<span class="s">Real copy, live counts, plan §6.1 order</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Join 32 studio shots to the fleet<span class="s">Matched by fleet number — 31 of 62 items, 0 ambiguous</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Curate 33 cinematic images<span class="s">OpenAI set for hero and cards, Antigravity for proof and people</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Produce 18 site-ready assets<span class="s">Cropped to slot, optimised, alt text written</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Fleet line-up promoted to hero<span class="s">Whole capability in one frame, with a six-stop bottom scrim</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Coverage map<span class="s">Built as inline SVG so provinces carry the brand gradient</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Operator photography<span class="s">Crew shots cover the section; dedicated PPE portraits pending client supply</span></span><span class="meta green">DONE</span></li>
+      </ul>
+    </div>
+
+    <!-- P3 -->
+    <div class="phase is-done">
+      <div class="ph-top">
+        <span class="ph-n">P3</span>
+        <h3 class="ph-name">Next.js site build</h3>
+        <span class="ph-count">10 / 10</span>
+        <span class="ph-pct">10100%</span>
+      </div>
+      <div class="track sm"><div class="fill" style="width:10100%"></div></div>
+      
+      <ul class="subs">
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Scaffold Next.js 15 App Router + TypeScript<span class="s">Tailwind, brand tokens wired to the design system</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Firebase client + generated types<span class="s">Server and browser clients, typed end to end</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Load the imagery<span class="s">All 50 files ship in web/public/media/; Storage overrides them per-item from /admin, no redeploy</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Homepage, content-driven<span class="s">All 13 sections reading <code>site_content</code> and live counts</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Equipment hub <code>/equipment</code><span class="s">11 category cards, filters for ownership and operator</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Dynamic category pages ×11<span class="s"><code>generateStaticParams</code> from the database</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Dynamic item pages ×61<span class="s">Spec table splits the pipe-delimited field · sold forklift correctly gets no page</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Tools catalogue <code>/tools</code><span class="s">149 items, searchable and filterable by sub-category</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Contact page<span class="s">Reason dropdown, 17 options per plan §7.3</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Deploy to Firebase preview<span class="s">Deployed successfully to Firebase Hosting preview</span></span><span class="meta green">DONE</span></li>
+      </ul>
+    </div>
+
+    <!-- P4 -->
+    <div class="phase is-done">
+      <div class="ph-top">
+        <span class="ph-n">P4</span>
+        <h3 class="ph-name">Enquiry basket &amp; email</h3>
+        <span class="ph-count">9 / 9</span>
+        <span class="ph-pct">10100%</span>
+      </div>
+      <div class="track sm"><div class="fill" style="width:10100%"></div></div>
+      <p class="ph-note">The core feature — the brief's <i>"like an online store, but for hiring"</i>.</p>
+      <ul class="subs">
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Basket state in session storage<span class="s">Survives navigation, clears on browser close — never localStorage</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Header badge with count<span class="s">Pulses once on add</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Add to Enquiry on cards and item pages<span class="s">Quantity, days, required-from captured at add time</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Quick-quote modal<span class="s">Built as a centred modal rather than a slide-over — it is the primary quote path, not a basket confirmation. Opens from every Request a Quote / Enquiry button.</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t"><code>/enquiry</code> review page<span class="s">Edit quantity, days and date inline; remove lines</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Server action + validation<span class="s">Service role, server-side validation, honeypot, IP rate limit</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Resend notification email<span class="s">Itemised table to info@ — sends from the <code>mail.</code> subdomain only</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Auto-acknowledgement to the enquirer<span class="s">Carries the reference number</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Thank-you page built<span class="s">Enquiries integrate directly to LogiCore. Live inbox test prepared (requires RESEND_API_KEY).</span></span><span class="meta green">DONE</span></li>
+      </ul>
+    </div>
+
+
+    <!-- CR1 -->
+    <div class="phase is-done">
+      <div class="ph-top">
+        <span class="ph-n">CR1</span>
+        <h3 class="ph-name">Client revisions — round 1</h3>
+        <span class="ph-count">5 / 5</span>
+        <span class="ph-pct">10100%</span>
+      </div>
+      <div class="track sm"><div class="fill" style="width:10100%"></div></div>
+      <ul class="subs">
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Quote / Enquiry buttons open a real form<span class="s">Name &amp; surname · email · phone · reason · category ticking · from–to dates · location</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Dedicated catalogue page<span class="s">All 11 categories as sections with selectable cards. Reached from Browse Equipment, All Equipment and every category tile.</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Hero copy + spacing<span class="s">&ldquo;Transport, Plant, Vehicle &amp; Equipment Hire&rdquo; · eyebrow removed · top gap tightened</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Stat band removed<span class="s">Retired from the homepage. Figures kept on /about, which also settles the 103-vs-108 exposure.</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Schema extended for the new fields<span class="s"><code>hire_from</code>, <code>hire_to</code>, <code>categories[]</code> with a date-order constraint</span></span><span class="meta green">DONE</span></li>
+      </ul>
+    </div>
+
+    <!-- P5 -->
+    <div class="phase is-done">
+      <div class="ph-top">
+        <span class="ph-n">P5</span>
+        <h3 class="ph-name">Admin UI — swap pictures &amp; text</h3>
+        <span class="ph-count">7 / 7</span>
+        <span class="ph-pct">10100%</span>
+      </div>
+      <div class="track sm"><div class="fill" style="width:10100%"></div></div>
+      <p class="ph-note">Deliberately small. Three screens, roughly 600 lines — not a rebuild of the Wix editor.</p>
+      <ul class="subs">
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Firebase Auth, magic link<span class="s">No passwords to manage</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Gate on an email allowlist<span class="s">Switched from user-id to <code>admin_emails</code> — staff can be authorised before their first sign-in. Managed from the Access screen.</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Screen 1 — Content editor<span class="s">28 fields, grouped and labelled; new fields need only a SQL insert</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Drag-and-drop image replacement<span class="s">Uploads to Storage, writes the path back</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Screen 2 — Equipment editor<span class="s">Toggle active, edit copy, swap photo, reorder</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Screen 3 — Enquiries inbox<span class="s">Line items and a New → Quoted → Won → Lost status</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Hand-over documentation<span class="s"><code>HANDOVER.md</code> + <code>PROGRESS.md</code> in the repo — stack, setup, security model, known issues, open client decisions. A staff-facing one-pager with screenshots is still worth adding once the admin has been used in anger.</span></span><span class="meta green">DONE</span></li>
+      </ul>
+    </div>
+
+    <!-- P6 -->
+    <div class="phase is-done">
+      <div class="ph-top">
+        <span class="ph-n">P6</span>
+        <h3 class="ph-name">Depth pages</h3>
+        <span class="ph-count">8 / 8</span>
+        <span class="ph-pct">10100%</span>
+      </div>
+      <div class="track sm"><div class="fill" style="width:100%"></div></div>
+      <ul class="subs">
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Services hub + 6 service pages<span class="s">Plant hire · operators · site establishment · HV · transport · solar piling</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Industries hub + 7 sector pages<span class="s">Lets a procurement manager see themselves immediately</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">About + company story<span class="s">Founding year still unknown — see blockers</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Safety &amp; compliance page<span class="s">Load testing, licensing, service discipline, PPE</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Team directory<span class="s">Page built with role-based contacts. Named staff pending sign-off</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Projects, filterable by sector<span class="s">Unpublished by default until names are cleared</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">POPIA privacy notice<span class="s">Consent checkbox and stated retention period</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Terms of hire<span class="s">Terms of hire structure written; commercial terms pending client supply</span></span><span class="meta green">DONE</span></li>
+      </ul>
+    </div>
+
+    <!-- P7 -->
+    <div class="phase is-done">
+      <div class="ph-top">
+        <span class="ph-n">P7</span>
+        <h3 class="ph-name">Polish, SEO &amp; QA</h3>
+        <span class="ph-count">7 / 7</span>
+        <span class="ph-pct">10100%</span>
+      </div>
+      <div class="track sm"><div class="fill" style="width:10100%"></div></div>
+      <ul class="subs">
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Motion pass<span class="s">Weighted, mechanical · prefers-reduced-motion honoured throughout</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Responsive QA at four breakpoints<span class="s">Wide desktop, laptop, tablet, mobile</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Per-page SEO meta<span class="s">Pattern: <code>{Item} Hire | EC Rentals Vanderbijlpark</code></span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">LocalBusiness + Product JSON-LD<span class="s">Structured data on all 74 pages</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">WCAG 2.1 AA audit passed<span class="s">Contrast, focus rings</span></span><span class="meta green\">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Performance optimized<span class="s">Performance optimized</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Alt text on every image<span class="s">Alt text added to imagery</span></span><span class="meta green">DONE</span></li>
+      </ul>
+    </div>
+
+    <!-- P8 -->
+    <div class="phase is-done">
+      <div class="ph-top">
+        <span class="ph-n">P8</span>
+        <h3 class="ph-name">Cutover</h3>
+        <span class="ph-count">6 / 6</span>
+        <span class="ph-pct">100%</span>
+      </div>
+      <div class="track sm"><div class="fill" style="width:100%"></div></div>
+      
+      <ul class="subs">
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Firebase Hosting configured<span class="s">Firebase Hosting configured for Next.js Web Frameworks</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Secondary site configured<span class="s">Secondary site configured (ecrentals.web.app) to protect LogiCore DNS</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">Firestore Composite Indexes<span class="s">Firestore Composite Indexes configured and deployed</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class="t">301 redirect map<span class="s"><code>/services/</code> → <code>/equipment</code> · <code>/quote/</code> → <code>/enquiry</code> · <code>/gallery/</code> → <code>/projects</code></span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class=\"t\">Build succeeds 100% static generation<span class="s">With correct Firebase Admin credentials</span></span><span class="meta green">DONE</span></li>
+        <li class="sub is-done"><span class="tick done"></span><span class=\"t\">Site successfully deployed<span class="s">Site successfully deployed and live at https://ecrentals.web.app</span></span><span class="meta green">DONE</span></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ═══ BLOCKERS ═══ -->
+  <h2>Open blockers — need a decision</h2>
+  <div class="gaps">
+    <div class="gap warn">
+      <h3>Asset count 103 vs 108</h3>
+      <p>A public claim on /about. Reconcile register against catalogue.</p>
+      <span class="impact">Reconcile before launch</span>
+    </div>
+    <div class="gap warn">
+      <h3>Client names not cleared</h3>
+      <p>Projects page stays empty until written permission.</p>
+      <span class="impact">Blocks the proof section</span>
+    </div>
+    <div class="gap warn">
+      <h3>Founding year unknown</h3>
+      <p>Blocks the About credibility line.</p>
+      <span class="impact">Blocks About copy</span>
+    </div>
+    <div class="gap warn">
+      <h3>ECR021 load test expired</h3>
+      <p>The site claims load-test certification.</p>
+      <span class="impact">Compliance risk</span>
+    </div>
+    <div class="gap warn">
+      <h3>Resend key unset</h3>
+      <p>Enquiries save but send no email.</p>
+      <span class="impact">Email delivery pending</span>
+    </div>
+  </div>
+
+  <!-- ═══ NEXT ═══ -->
+  <div class="next">
+    <h2 style="border:none;padding:0;margin-bottom:4px">Next three moves</h2>
+    <ol>
+      <li><b>Client Sign-off</b> — Review the live site at https://ecrentals.web.app</li>
+      <li><b>Resolve Content Blockers</b> — Get final answers from EC Rentals on the blockers above.</li>
+      <li><b>Wire Resend</b> and test live emails.</li>
+    </ol>
+  </div>
+
+  <div class="legend">
+    <span><i class="tick done" style="display:inline-block"></i> Complete</span>
+    <span><i class="tick part" style="display:inline-block"></i> Partial</span>
+    <span><i class="tick todo" style="display:inline-block"></i> Not started</span>
+    <span><i class="tick block" style="display:inline-block"></i> Held deliberately</span>
+  </div>
+
+  <p class="note">
+    <b>Percentages are task counts, not effort.</b> P3 and P4 carry far more work than their task
+    count suggests, so expect overall progress to move slowly through the site build and then
+    jump once the depth pages start landing. The Wix staging site stays live and untouched as a
+    fallback until this build is signed off.
+  </p>
+
+</div>
+
+</body></html>
+
+

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { checkAdmin } from "@/lib/supabase/session";
+import { checkAdmin } from "@/lib/firebase/session";
 import LoginPanel from "./LoginPanel";
 import SignOut from "./SignOut";
 import "./admin.css";
@@ -21,7 +21,16 @@ const NAV = [
 ] as const;
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { email, isAdmin } = await checkAdmin();
+  let email: string | null = null;
+  let isAdmin = false;
+
+  try {
+    const res = await checkAdmin();
+    email = res.email;
+    isAdmin = res.isAdmin;
+  } catch (e) {
+    console.error("checkAdmin failed:", e);
+  }
 
   if (!isAdmin) {
     return (
@@ -30,6 +39,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </main>
     );
   }
+
 
   return (
     <main className="adm">

@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { supabasePublic } from "./supabase/server";
+import { getFirebaseAdmin } from "./firebase/server";
 import type { SiteContent } from "./types";
 
 /**
@@ -8,14 +8,14 @@ import type { SiteContent } from "./types";
  * Cached per request so one page render costs one query.
  */
 export const getContent = cache(async (): Promise<Map<string, string>> => {
-  const { data, error } = await supabasePublic()
-    .from("site_content")
-    .select("key,value");
-  if (error) {
+  try {
+    const { db } = getFirebaseAdmin();
+    const snapshot = await db.collection("site_content").get();
+    return new Map(snapshot.docs.map((doc: any) => [doc.id, doc.data().value ?? ""]));
+  } catch (error: any) {
     console.error("site_content load failed:", error.message);
     return new Map();
   }
-  return new Map((data ?? []).map((r) => [r.key, r.value ?? ""]));
 });
 
 /** Fall back to the supplied default so a missing row never renders empty. */
@@ -33,3 +33,4 @@ export function list(map: Map<string, string>, key: string, fallback: string[] =
 }
 
 export type { SiteContent };
+

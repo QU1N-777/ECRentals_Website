@@ -3,6 +3,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import EnquiryModal from "@/components/EnquiryModal";
+import CartToast from "@/components/CartToast";
 import { getCategories } from "@/lib/queries";
 import { getContent, t } from "@/lib/content";
 
@@ -39,6 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {children}
         <Footer />
         <EnquiryModal categories={cats.map((c) => ({ slug: c.slug, title: c.title }))} />
+        <CartToast />
       </body>
     </html>
   );

@@ -1,11 +1,15 @@
 import type { NextConfig } from "next";
 
-const SUPABASE_HOST = "gblryijimeedzyyjnksd.supabase.co";
+import path from "path";
+
+const FIREBASE_HOST = "firebasestorage.googleapis.com";
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: path.resolve(__dirname),
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: SUPABASE_HOST, pathname: "/storage/v1/object/public/**" },
+      { protocol: "https", hostname: FIREBASE_HOST, pathname: "/v0/b/**" },
+      { protocol: "https", hostname: "storage.googleapis.com", pathname: "/**" },
     ],
     formats: ["image/avif", "image/webp"],
   },

@@ -92,6 +92,21 @@ export default async function ItemPage({ params }: Params) {
             <p className="item__lede">{item.short_description}</p>
 
             <div className="badges">
+              {item.featured && <span className="badge badge--featured">⭐ Featured Fleet</span>}
+              {item.ownership === "Managed" ? (
+                <span className="badge badge--managed">Managed hire</span>
+              ) : (
+                <span className={`badge badge--avail-${item.availability_status || "available"}`}>
+                  <span className={`pulse-dot pulse-dot--${item.availability_status || "available"}`} />
+                  {item.availability_status === "limited"
+                    ? "Limited Stock"
+                    : item.availability_status === "on_hire"
+                    ? "On Project Hire"
+                    : item.availability_status === "maintenance"
+                    ? "In Workshop / Service"
+                    : "Available Now"}
+                </span>
+              )}
               <span className={`badge ${item.ownership === "Managed" ? "badge--managed" : "badge--owned"}`}>
                 {item.ownership === "Managed" ? "Managed hire" : "Owned fleet"}
               </span>
@@ -100,6 +115,11 @@ export default async function ItemPage({ params }: Params) {
               {item.ownership === "Owned" && item.fleet_qty > 0 && (
                 <span className="badge badge--qty num">{item.fleet_qty} in fleet</span>
               )}
+              {item.specs_badges?.map((badge: string) => (
+                <span key={badge} className="badge badge--spec">
+                  {badge}
+                </span>
+              ))}
             </div>
 
             {specs.length > 0 && (

@@ -34,6 +34,9 @@ export type Equipment = {
   gallery: string[];
   sort_order: number;
   active: boolean;
+  availability_status?: "available" | "limited" | "on_hire" | "maintenance";
+  featured?: boolean;
+  specs_badges?: string[];
 };
 
 export type EquipmentWithCategory = Equipment & {
