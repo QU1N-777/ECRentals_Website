@@ -145,6 +145,13 @@ Overall  ███████████████████████�
 - **Safety Category to Enquiry Card Gap Parameter**: Added `toolsCalloutGap` to `SpacingConfig`, Firestore `site_settings/spacing`, and the Spacing Studio UI, giving dedicated control over the space between "Safety & Site Equipment" and the bottom callout.
 - **Enquiry Callout Glass Card**: Enhanced "Hiring tools alongside plant?" with frosted glassmorphic backdrop-filter, amber accent glow line, and reactive spacing.
 
+**P12 — Category Breakline Polish & Resend Email Automation System (5/5)**
+- **Category Breaklines De-cluttered**: Removed redundant pill badges (`● CATEGORY NAME`) from section dividers while retaining sleek 1px glowing horizontal breaklines (`.tool-cat-divider__line`) styled with distinct category color gradients.
+- **Dynamic Email Automation Engine**: Built `web/lib/email-service.ts` connecting Resend to designated team notification inboxes (`info@ecrentals.co.za` + `sales@ecrentals.co.za`), featuring dark-metallic HTML notification emails with full quote summaries and customer receipt auto-acknowledgements.
+- **Admin Email Settings Studio**: Added `EmailSettingsModal.tsx` directly to `/admin/enquiries` with API key masking, custom sender name/email, notification targets (`To:` and `CC:`), customer receipt toggles, and instant persistence to Firestore `site_settings/email` without requiring server redeployment.
+- **Diagnostic Test Dispatcher**: Built `/api/admin/email-settings/test` with real-time feedback, API key verification, and clear DNS/domain guidance (e.g. domain verification on `mail.ecrentals.co.za`).
+- **Enquiry Re-dispatch & Tracking**: Updated `/app/enquiry/actions.ts` and `/app/enquiry/quick-actions.ts` to log email delivery statuses (`sent`, `no_api_key`, `failed`) and added a 1-click **"✉️ Resend Alert"** button directly to each enquiry card in the admin console.
+
 ---
 
 ## Blockers
@@ -152,17 +159,17 @@ Overall  ███████████████████████�
 | Severity | Item | Effect |
 |---|---|---|
 | ✅ | ~~Admin auth user not created~~ | Resolved. LogiCore auth handles admin sign in. |
+| ✅ | ~~Resend key unset~~ | Resolved. Resend automation wired with Admin UI config & live test runner. |
 | 🟡 | **Asset count 103 vs 108** | A public claim on `/about`. Reconcile register against catalogue |
 | 🟡 | **Client names not cleared** | Projects page stays empty until written permission |
 | 🟡 | **Founding year unknown** | Blocks the About credibility line |
 | 🟡 | **ECR021 load test expired** | The site claims load-test certification |
-| 🟡 | **Resend key unset** | Enquiries save but send no email |
 
 ---
 
 ## Next three moves
 
 1. **Client Sign-off** — Review the live site at https://ecrentals.web.app
-2. **Resolve Content Blockers** — Get final answers from EC Rentals on the yellow blockers above.
-3. **Wire Resend** and test live emails.
+2. **Resend Live Test** — Open `/admin/enquiries`, click `⚙️ Email Automation`, enter Resend API key, and click `Send Test Notification`.
+3. **Resolve Remaining Content Blockers** — Get final answers from EC Rentals on asset count and client project permissions.
 

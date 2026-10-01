@@ -2212,28 +2212,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin: 6px 0 12px;
+  width: 100%;
+  margin: 6px 0 10px;
 }
 .mini-divider__line {
-  flex: 1;
+  width: 100%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--divider-accent, #0EA5E9), transparent);
-  opacity: 0.6;
-}
-.mini-divider__dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--divider-accent, #0EA5E9);
-}
-.mini-divider__text {
-  font-family: Archivo, sans-serif;
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--steel-lift);
+  background: linear-gradient(90deg, transparent 0%, var(--divider-accent, #0EA5E9) 50%, transparent 100%);
+  opacity: 0.7;
 }
 
 .mini-cat-card {

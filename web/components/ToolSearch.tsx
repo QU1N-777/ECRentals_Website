@@ -596,11 +596,6 @@ export default function ToolSearch({ tools }: { tools: Tool[] }) {
                     style={{ "--divider-accent": meta.accent } as React.CSSProperties}
                   >
                     <span className="tool-cat-divider__line" />
-                    <span className="tool-cat-divider__badge">
-                      <span className="tool-cat-divider__dot" />
-                      <span className="tool-cat-divider__label">{meta.displayTitle}</span>
-                    </span>
-                    <span className="tool-cat-divider__line" />
                   </div>
                 )}
 

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { headers } from "next/headers";
 import { getFirebaseAdmin } from "@/lib/firebase/server";
+import { sendEnquiryNotification } from "@/lib/email-service";
 
 /**
  * Enquiry submission.
@@ -152,9 +153,37 @@ export async function submitEnquiry(raw: unknown): Promise<EnquiryResult> {
     });
 
     try {
-      await sendNotifications(d, reference, submitted_at);
-    } catch (e) {
+      const emailResult = await sendEnquiryNotification({
+        reference,
+        name: d.name,
+        company: d.company,
+        email: d.email,
+        phone: d.phone,
+        reason: d.reason,
+        deliverySite: d.deliverySite,
+        projectStartDate: d.projectStartDate,
+        notes: d.notes,
+        items: d.items.map((i) => ({
+          title: i.title,
+          qty: i.qty,
+          days: i.days,
+          requiredFrom: i.requiredFrom,
+        })),
+        submittedAt: submitted_at,
+      });
+
+      await docRef.update({
+        email_status: emailResult.status,
+        email_sent_at: emailResult.success ? new Date().toISOString() : null,
+        email_error: emailResult.error || null,
+        email_id: emailResult.internalId || null,
+      });
+    } catch (e: any) {
       console.error("enquiry email failed:", e);
+      await docRef.update({
+        email_status: "failed",
+        email_error: e.message || "Failed to dispatch email",
+      }).catch(() => {});
     }
 
     return { ok: true, reference };
@@ -162,137 +191,6 @@ export async function submitEnquiry(raw: unknown): Promise<EnquiryResult> {
     console.error("enquiry insert failed:", error.message);
     return { ok: false, error: "We couldn't save that. Please phone us on +27 66 429 5788." };
   }
-}
-
-async function settings(): Promise<Record<string, string>> {
-  const { db } = getFirebaseAdmin();
-  const snapshot = await db.collection("settings").get();
-  return Object.fromEntries(snapshot.docs.map((doc: any) => [doc.id, doc.data().value ?? ""]));
-}
-
-async function sendNotifications(
-  d: z.infer<typeof Payload>,
-  reference: string,
-  submittedAt: string
-) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    console.warn(`RESEND_API_KEY not set — ${reference} saved but no email sent.`);
-    return;
-  }
-  const { Resend } = await import("resend");
-  const resend = new Resend(key);
-  const s = await settings();
-
-  const from = s["enquiry.from_address"] || "enquiries@mail.ecrentals.co.za";
-  const replyTo = s["enquiry.reply_to"] || "info@ecrentals.co.za";
-  // Both addresses, as requested — sales and info together on every enquiry.
-  const to = [s["enquiry.notify_to"] || "info@ecrentals.co.za",
-              s["enquiry.notify_cc"] || "sales@ecrentals.co.za"].filter(Boolean);
-
-  const when = new Intl.DateTimeFormat("en-ZA", {
-    dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Johannesburg",
-  }).format(new Date(submittedAt));
-
-  const rows = d.items
-    .map(
-      (i) => `<tr>
-        <td style="padding:9px 12px;border-bottom:1px solid #E8E9EB">${esc(i.title)}</td>
-        <td style="padding:9px 12px;border-bottom:1px solid #E8E9EB;text-align:right">${i.qty}</td>
-        <td style="padding:9px 12px;border-bottom:1px solid #E8E9EB;text-align:right">${i.days}</td>
-        <td style="padding:9px 12px;border-bottom:1px solid #E8E9EB">${i.requiredFrom ?? "—"}</td>
-      </tr>`
-    )
-    .join("");
-
-  const internal = `
-  <div style="font-family:Inter,Arial,sans-serif;color:#1C1E21;max-width:680px">
-    <div style="background:#0A0A0B;padding:20px 24px">
-      <span style="color:#fff;font-weight:800;letter-spacing:-.02em;font-size:18px">EC</span>
-      <span style="color:#BA1B20;font-weight:800;font-size:18px"> RENTALS</span>
-      <div style="color:#F5A524;font-size:11px;letter-spacing:.14em;margin-top:6px">NEW HIRE ENQUIRY</div>
-    </div>
-    <div style="padding:24px">
-      <table style="font-size:14px;margin-bottom:20px">
-        <tr><td style="padding:3px 16px 3px 0;color:#6B7280">REFERENCE</td><td><b>${esc(reference)}</b></td></tr>
-        <tr><td style="padding:3px 16px 3px 0;color:#6B7280">SUBMITTED</td><td>${esc(when)} SAST</td></tr>
-        <tr><td style="padding:3px 16px 3px 0;color:#6B7280">REASON</td><td>${esc(d.reason || "Quotation")}</td></tr>
-      </table>
-
-      <h3 style="font-size:12px;letter-spacing:.14em;color:#6B7280;margin:0 0 8px">EQUIPMENT REQUESTED</h3>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px">
-        <thead><tr style="background:#F5F6F7">
-          <th style="padding:9px 12px;text-align:left">Item</th>
-          <th style="padding:9px 12px;text-align:right">Qty</th>
-          <th style="padding:9px 12px;text-align:right">Days</th>
-          <th style="padding:9px 12px;text-align:left">Required from</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-
-      <h3 style="font-size:12px;letter-spacing:.14em;color:#6B7280;margin:0 0 8px">CONTACT</h3>
-      <table style="font-size:14px;margin-bottom:20px">
-        <tr><td style="padding:3px 16px 3px 0;color:#6B7280">Name</td><td>${esc(d.name)}</td></tr>
-        <tr><td style="padding:3px 16px 3px 0;color:#6B7280">Company</td><td>${esc(d.company || "—")}</td></tr>
-        <tr><td style="padding:3px 16px 3px 0;color:#6B7280">Email</td><td><a href="mailto:${esc(d.email)}">${esc(d.email)}</a></td></tr>
-        <tr><td style="padding:3px 16px 3px 0;color:#6B7280">Phone</td><td><a href="tel:${esc(d.phone)}">${esc(d.phone)}</a></td></tr>
-        <tr><td style="padding:3px 16px 3px 0;color:#6B7280">Delivery site</td><td>${esc(d.deliverySite || "—")}</td></tr>
-        <tr><td style="padding:3px 16px 3px 0;color:#6B7280">Project start</td><td>${esc(d.projectStartDate || "—")}</td></tr>
-      </table>
-      ${d.notes ? `<h3 style="font-size:12px;letter-spacing:.14em;color:#6B7280;margin:0 0 8px">NOTES</h3>
-        <p style="font-size:14px;white-space:pre-wrap;margin:0">${esc(d.notes)}</p>` : ""}
-    </div>
-  </div>`;
-
-  await resend.emails.send({
-    from: `EC Rentals Enquiries <${from}>`,
-    to,
-    replyTo: d.email, // replying goes straight back to the customer
-    subject: `New Hire Enquiry — ${reference} — ${d.company || d.name}`,
-    html: internal,
-  });
-
-  const ack = `
-  <div style="font-family:Inter,Arial,sans-serif;color:#1C1E21;max-width:600px">
-    <div style="background:#0A0A0B;padding:20px 24px">
-      <span style="color:#fff;font-weight:800;font-size:18px">EC</span><span style="color:#BA1B20;font-weight:800;font-size:18px"> RENTALS</span>
-    </div>
-    <div style="padding:24px;font-size:15px;line-height:1.6">
-      <p>Thanks ${esc(d.name.split(" ")[0])} — we have your enquiry.</p>
-      <p>Your reference is <b>${esc(reference)}</b>. Quote it if you call us.</p>
-      <p>We come back on enquiries within <b>24 hours</b>. Availability is confirmed on quotation.</p>
-      <table style="font-size:14px;margin:18px 0;border-collapse:collapse;width:100%">
-        <thead><tr style="background:#F5F6F7">
-          <th style="padding:8px 12px;text-align:left">Item</th>
-          <th style="padding:8px 12px;text-align:right">Qty</th>
-          <th style="padding:8px 12px;text-align:right">Days</th>
-        </tr></thead>
-        <tbody>${d.items.map((i) => `<tr>
-          <td style="padding:8px 12px;border-bottom:1px solid #E8E9EB">${esc(i.title)}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E8E9EB;text-align:right">${i.qty}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E8E9EB;text-align:right">${i.days}</td>
-        </tr>`).join("")}</tbody>
-      </table>
-      <p style="color:#6B7280;font-size:13px">
-        EC Rentals (Pty) Ltd · Lead EPC Building, Cnr Hertz &amp; Becquerel Street, Vanderbijlpark<br>
-        +27 66 429 5788 · +27 82 850 4902
-      </p>
-    </div>
-  </div>`;
-
-  await resend.emails.send({
-    from: `EC Rentals <${from}>`,
-    to: [d.email],
-    replyTo,
-    subject: `We have your enquiry — ${reference}`,
-    html: ack,
-  });
-}
-
-function esc(s: string): string {
-  return s.replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!
-  );
 }
 
 

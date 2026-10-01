@@ -549,9 +549,6 @@ export default function SpacingStudio({ initialConfig }: Props) {
                     {/* Category 2: Electrical & Cabling with Light Break Line */}
                     <div className="mini-divider" style={{ "--divider-accent": "#0EA5E9" } as React.CSSProperties}>
                       <span className="mini-divider__line" />
-                      <span className="mini-divider__dot" />
-                      <span className="mini-divider__text">Electrical &amp; Cabling</span>
-                      <span className="mini-divider__line" />
                     </div>
 
                     <div
@@ -608,9 +605,6 @@ export default function SpacingStudio({ initialConfig }: Props) {
                     </div>
 
                     <div className="mini-divider" style={{ "--divider-accent": "#F43F5E" } as React.CSSProperties}>
-                      <span className="mini-divider__line" />
-                      <span className="mini-divider__dot" />
-                      <span className="mini-divider__text">Safety &amp; Site Equipment</span>
                       <span className="mini-divider__line" />
                     </div>
 

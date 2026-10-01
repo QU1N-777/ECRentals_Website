@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { getFirebaseClient } from "@/lib/firebase/client";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import LeadInsightsWidget from "@/components/admin/LeadInsightsWidget";
+import EmailSettingsModal from "@/components/admin/EmailSettingsModal";
 
 type Enquiry = {
   id: string;
@@ -22,6 +23,9 @@ type Enquiry = {
   items_summary: string | null;
   status: string;
   submitted_at: string;
+  email_status?: string | null;
+  email_sent_at?: string | null;
+  email_error?: string | null;
 };
 
 type Line = {
@@ -52,6 +56,51 @@ export default function EnquiryInbox({
   const [viewMode, setViewMode] = useState<"glass" | "list">("glass");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  const [showEmailSettings, setShowEmailSettings] = useState(false);
+  const [emailConfig, setEmailConfig] = useState<{ hasKey: boolean; notifyTo?: string } | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [resendMsg, setResendMsg] = useState<{ id: string; success: boolean; msg: string } | null>(null);
+
+  const fetchEmailStatus = () => {
+    fetch("/api/admin/email-settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.config) {
+          setEmailConfig({
+            hasKey: data.config.hasKey,
+            notifyTo: data.config.notifyTo,
+          });
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchEmailStatus();
+  }, []);
+
+  async function handleResendEmail(id: string) {
+    setResendingId(id);
+    setResendMsg(null);
+    try {
+      const res = await fetch(`/api/admin/enquiries/${id}/resend`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setResendMsg({ id, success: true, msg: "✓ Email alert dispatched to team!" });
+        setRows((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, email_status: "sent" } : r))
+        );
+      } else {
+        setResendMsg({ id, success: false, msg: data.error || "Failed to dispatch email." });
+      }
+    } catch (e: any) {
+      setResendMsg({ id, success: false, msg: e.message || "Network error" });
+    } finally {
+      setResendingId(null);
+      setTimeout(() => setResendMsg(null), 6000);
+    }
+  }
 
   const byEnquiry = useMemo(() => {
     const m = new Map<string, Line[]>();
@@ -166,13 +215,61 @@ Status: ${e.status || "New"}
 
   return (
     <>
-      <div className="adm__head">
+      <div
+        className="adm__head"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
+          gap: 16,
+        }}
+      >
         <div>
           <h1>Enquiries &amp; Quotation Pipeline</h1>
           <p>
             Track incoming quotation requests, view interactive Glass Cards, and reply directly via
             WhatsApp, Email, or clipboard export.
           </p>
+        </div>
+
+        <div>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => setShowEmailSettings(true)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              borderColor: emailConfig?.hasKey ? "rgba(16, 185, 129, 0.4)" : "rgba(245, 165, 36, 0.4)",
+              background: emailConfig?.hasKey ? "rgba(16, 185, 129, 0.08)" : "rgba(245, 165, 36, 0.08)",
+              cursor: "pointer",
+            }}
+          >
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: emailConfig?.hasKey ? "#10B981" : "#F5A524",
+                boxShadow: `0 0 8px ${emailConfig?.hasKey ? "#10B981" : "#F5A524"}`,
+                display: "inline-block",
+              }}
+            />
+            <span style={{ fontWeight: 700, color: "#fff" }}>⚙️ Email Automation</span>
+            <span
+              style={{
+                fontSize: 10,
+                color: emailConfig?.hasKey ? "#34D399" : "#FBBF24",
+                textTransform: "uppercase",
+                fontWeight: 800,
+                letterSpacing: "0.05em",
+              }}
+            >
+              {emailConfig?.hasKey ? "Active" : "Key Required"}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -324,6 +421,86 @@ Status: ${e.status || "New"}
                   <div style={{ fontSize: 12.5, color: "#c4c8d0", background: "rgba(0,0,0,0.3)", padding: "8px 10px", borderRadius: 4 }}>
                     <b style={{ color: "var(--amber)", display: "block", marginBottom: 2 }}>Notes:</b>
                     {e.notes}
+                  </div>
+                )}
+
+                {/* Email Delivery Status Banner */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 10px",
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: 4,
+                    fontSize: 11.5,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: "50%",
+                        background:
+                          e.email_status === "sent"
+                            ? "#10B981"
+                            : e.email_status === "failed"
+                            ? "#EF4444"
+                            : "#F5A524",
+                        display: "inline-block",
+                      }}
+                    />
+                    <span
+                      style={{
+                        color:
+                          e.email_status === "sent"
+                            ? "#34D399"
+                            : e.email_status === "failed"
+                            ? "#F87171"
+                            : "#FBBF24",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {e.email_status === "sent"
+                        ? "Email Alert Dispatched"
+                        : e.email_status === "failed"
+                        ? "Email Alert Failed"
+                        : "Email Alert Pending / Unsent"}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={resendingId === e.id}
+                    onClick={() => handleResendEmail(e.id)}
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 3,
+                      padding: "2px 8px",
+                      fontSize: 10.5,
+                      color: "var(--steel-lift)",
+                      cursor: resendingId === e.id ? "wait" : "pointer",
+                    }}
+                    title="Send or resend email notification to the team and customer"
+                  >
+                    {resendingId === e.id ? "Sending..." : "✉️ Resend Alert"}
+                  </button>
+                </div>
+
+                {resendMsg && resendMsg.id === e.id && (
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: resendMsg.success ? "#34D399" : "#F87171",
+                      padding: "4px 8px",
+                      background: resendMsg.success ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+                      borderRadius: 3,
+                    }}
+                  >
+                    {resendMsg.msg}
                   </div>
                 )}
 
@@ -497,6 +674,13 @@ Status: ${e.status || "New"}
           })}
         </ul>
       )}
+
+      {/* Email Automation Configuration Modal */}
+      <EmailSettingsModal
+        isOpen={showEmailSettings}
+        onClose={() => setShowEmailSettings(false)}
+        onSaved={fetchEmailStatus}
+      />
     </>
   );
 }

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { headers } from "next/headers";
 import { getFirebaseAdmin } from "@/lib/firebase/server";
+import { sendEnquiryNotification } from "@/lib/email-service";
 
 /**
  * Quick quote — the modal behind every "Request a Quote" / "Enquiry" button.
@@ -153,9 +154,38 @@ export async function submitQuickQuote(raw: unknown): Promise<QuickResult> {
     });
 
     try {
-      await notify(d, titles, window, reference, submitted_at);
-    } catch (e) {
+      const emailResult = await sendEnquiryNotification({
+        reference,
+        name: d.name,
+        company: null,
+        email: d.email,
+        phone: d.phone,
+        reason: d.reason,
+        deliverySite: d.location,
+        hireFrom: d.hireFrom,
+        hireTo: d.hireTo,
+        notes: d.notes,
+        items: titles.map((t) => ({
+          title: t,
+          qty: 1,
+          days: 1,
+          requiredFrom: window,
+        })),
+        submittedAt: submitted_at,
+      });
+
+      await docRef.update({
+        email_status: emailResult.status,
+        email_sent_at: emailResult.success ? new Date().toISOString() : null,
+        email_error: emailResult.error || null,
+        email_id: emailResult.internalId || null,
+      });
+    } catch (e: any) {
       console.error("quick quote email failed:", e);
+      await docRef.update({
+        email_status: "failed",
+        email_error: e.message || "Failed to dispatch email",
+      }).catch(() => {});
     }
 
     return { ok: true, reference };
@@ -163,105 +193,4 @@ export async function submitQuickQuote(raw: unknown): Promise<QuickResult> {
     console.error("quick quote insert failed:", error.message);
     return { ok: false, error: "We couldn't save that. Please phone us on +27 66 429 5788." };
   }
-}
-
-async function notify(
-  d: z.infer<typeof Payload>,
-  titles: string[],
-  window: string,
-  reference: string,
-  submittedAt: string
-) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    console.warn(`RESEND_API_KEY not set — ${reference} saved but no email sent.`);
-    return;
-  }
-  const { Resend } = await import("resend");
-  const resend = new Resend(key);
-
-  const { db } = getFirebaseAdmin();
-  const snap = await db.collection("settings").get();
-  const s = Object.fromEntries(snap.docs.map((r) => [r.id, r.data().value ?? ""]));
-
-  const from = s["enquiry.from_address"] || "enquiries@mail.ecrentals.co.za";
-  const replyTo = s["enquiry.reply_to"] || "info@ecrentals.co.za";
-  const to = [
-    s["enquiry.notify_to"] || "info@ecrentals.co.za",
-    s["enquiry.notify_cc"] || "sales@ecrentals.co.za",
-  ].filter(Boolean);
-
-  const when = new Intl.DateTimeFormat("en-ZA", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Africa/Johannesburg",
-  }).format(new Date(submittedAt));
-
-  const row = (k: string, v: string) =>
-    `<tr><td style="padding:4px 16px 4px 0;color:#6B7280;white-space:nowrap">${esc(k)}</td><td>${v}</td></tr>`;
-
-  const internal = `
-  <div style="font-family:Inter,Arial,sans-serif;color:#1C1E21;max-width:660px">
-    <div style="background:#0A0A0B;padding:20px 24px">
-      <span style="color:#fff;font-weight:800;font-size:18px">EC</span><span style="color:#BA1B20;font-weight:800;font-size:18px"> RENTALS</span>
-      <div style="color:#F5A524;font-size:11px;letter-spacing:.14em;margin-top:6px">QUOTATION REQUEST</div>
-    </div>
-    <div style="padding:24px">
-      <table style="font-size:14px;margin-bottom:22px">
-        ${row("REFERENCE", `<b>${esc(reference)}</b>`)}
-        ${row("SUBMITTED", `${esc(when)} SAST`)}
-        ${row("REASON", esc(d.reason))}
-      </table>
-      <h3 style="font-size:12px;letter-spacing:.14em;color:#6B7280;margin:0 0 8px">EQUIPMENT REQUESTED</h3>
-      ${
-        titles.length
-          ? `<ul style="font-size:14px;margin:0 0 22px;padding-left:18px">${titles
-              .map((t) => `<li style="padding:2px 0">${esc(t)}</li>`)
-              .join("")}</ul>`
-          : `<p style="font-size:14px;margin:0 0 22px;color:#6B7280">No categories ticked — the customer wants a conversation.</p>`
-      }
-      <h3 style="font-size:12px;letter-spacing:.14em;color:#6B7280;margin:0 0 8px">DETAILS</h3>
-      <table style="font-size:14px;margin-bottom:20px">
-        ${row("Name", esc(d.name))}
-        ${row("Email", `<a href="mailto:${esc(d.email)}">${esc(d.email)}</a>`)}
-        ${row("Phone", `<a href="tel:${esc(d.phone)}">${esc(d.phone)}</a>`)}
-        ${row("Hire window", esc(window))}
-        ${row("Location", esc(d.location || "—"))}
-      </table>
-      ${
-        d.notes
-          ? `<h3 style="font-size:12px;letter-spacing:.14em;color:#6B7280;margin:0 0 8px">NOTES</h3><p style="font-size:14px;white-space:pre-wrap;margin:0">${esc(d.notes)}</p>`
-          : ""
-      }
-    </div>
-  </div>`;
-
-  await resend.emails.send({
-    from: `EC Rentals Enquiries <${from}>`,
-    to,
-    replyTo: d.email,
-    subject: `Quotation Request — ${reference} — ${d.name}`,
-    html: internal,
-  });
-
-  await resend.emails.send({
-    from: `EC Rentals <${from}>`,
-    to: [d.email],
-    replyTo,
-    subject: `We have your request — ${reference}`,
-    html: `
-    <div style="font-family:Inter,Arial,sans-serif;color:#1C1E21;max-width:600px">
-      <div style="background:#0A0A0B;padding:20px 24px">
-        <span style="color:#fff;font-weight:800;font-size:18px">EC</span><span style="color:#BA1B20;font-weight:800;font-size:18px"> RENTALS</span>
-      </div>
-      <div style="padding:24px;font-size:15px;line-height:1.6">
-        <p>Thanks ${esc(d.name.split(" ")[0])} — we have your request.</p>
-        <p>Your reference is <b>${esc(reference)}</b>. Quote it if you call us.</p>
-        <p>We come back within <b>24 hours</b>. Availability is confirmed on quotation.</p>
-        <p style="color:#6B7280;font-size:13px;margin-top:22px">
-          EC Rentals (Pty) Ltd · Vanderbijlpark<br>+27 66 429 5788 · +27 82 850 4902
-        </p>
-      </div>
-    </div>`,
-  });
 }
