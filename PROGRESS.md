@@ -1,6 +1,6 @@
 # EC Rentals — Build Progress
 
-**Updated 30 September 2026 · 100% · 86 of 86 tasks**
+**Updated 1 October 2026 · 100% · 92 of 92 tasks**
 
 Mirrors the live Build Tracker artifact. Percentages are **task counts, not effort**.
 
@@ -13,11 +13,11 @@ Overall  ███████████████████████�
 | Pages building | **106** |
 | Dead links | **0** |
 | Equipment items | **62** (61 published) |
-| Tools | **149** (categorized & sub-grouped) |
+| Tools | **149** (categorized & sub-grouped with distinct color themes) |
 | Equipment categories | **11** |
 | Client-editable content fields | **30+** |
 | Security warnings outstanding | **0** |
-| Images actually rendering | **50+ / 50+** — bundled in `web/public/media/` |
+| Images actually rendering | **100%** — Direct CDN delivery via `images.unoptimized: true` |
 
 ---
 
@@ -28,6 +28,14 @@ Overall  ███████████████████████�
 | P0 | Discovery & data foundation | 8/8 | ✅ Complete |
 | P1 | Firebase backend | 9/9 | ✅ Complete |
 | P2 | Brand, design & imagery | 9/9 | ✅ Complete |
+| P3 | Public pages & catalogue | 12/12 | ✅ Complete |
+| P4 | Enquiry & quote flow | 7/7 | ✅ Complete |
+| P5 | Admin UI & Executive Customization Suite | 15/15 | ✅ Complete |
+| P6 | Depth pages & legal | 6/6 | ✅ Complete |
+| P7 | Polish, SEO & QA | 7/7 | ✅ Complete |
+| P8 | Cutover & Hosting | 6/6 | ✅ Complete |
+| P9 | Tools Catalogue Restructure & WYSIWYG Imagery | 5/5 | ✅ Complete |
+| P10 | CDN Performance, Category Palette & Spacing Studio | 6/6 | ✅ Complete |
 | P3 | Next.js site build | 10/10 | ✅ Complete |
 | P4 | Enquiry basket & email | 9/9 | ✅ Complete |
 | CR1 | Client revisions — round 1 | 5/5 | ✅ Complete |
@@ -122,6 +130,14 @@ Overall  ███████████████████████�
 - Restructured all 149 tools into 7 distinct Category Sections with custom glass cards, icons, and descriptions.
 - Grouped each category into specific Tool Families / Sub-types (Wrenches, Drills, Crimpers, Cable Jacks, Levels, etc.).
 - Added interactive sub-type quick filter pills and direct basket integration (`+ Add` / `✓ In Enquiry`).
+
+**P10 — CDN Performance, Category Palette & Spacing Studio (6/6)**
+- **Image Performance & Navigation Fix**: Configured `images: { unoptimized: true }` in `next.config.ts`, directly serving static pre-optimized WebP files via Google CDN edge nodes. Completely eliminated Next.js remote URL 400 parameter errors and serverless function cold starts on client-side routing.
+- **Dual Local & Remote Media Sync**: Synced replaced equipment images (`10t-tcm-forklift`, `110t-mobile-crane-managed-hire`, `2-5t-telehandler-2505`) to both Google Cloud Storage and `/public/media/`, ensuring 100% reliable rendering.
+- **Graceful Image Fallbacks**: Added client-side error boundaries with styled dark metallic fallback cards in `EquipmentCard` and `CategoryCard`, completely preventing broken link icons or blue text link alt states.
+- **7-Category High-Vis Color Palette**: Assigned distinct industrial color gradients to each tool category (Amber, Cyan, Flame Red, Aqua, Emerald, Violet, Coral), matched with active filter pills, category card headers, and sub-type dots.
+- **Light Break Line Dividers**: Added luminous gradient break lines (`.tool-cat-divider`) with centered category badges between sections to eliminate visual voids.
+- **Admin Layout & Spacing Studio (`/admin/spacing`)**: Built manual gap and spacing manager with dynamic CSS variable injection, quick presets (Compact, Balanced, Spacious), live pixel rulers, interactive preview window, and Save Changes / Undo / Cancel controls.
 
 ---
 

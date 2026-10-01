@@ -18,18 +18,31 @@ const BUCKET = "site";
  */
 export function img(path: string | null | undefined): string | null {
   if (!path) return null;
-  // If a Firebase Storage URL was stored in the database, extract the bare filename
-  // so it maps to the bundled starter set in /media/
-  if (path.includes("firebasestorage.googleapis.com")) {
-    const match = path.match(/\/o\/([^?]+)/);
-    if (match && match[1]) {
-      const decoded = decodeURIComponent(match[1]);
-      return `/media/${decoded}`;
+  const p = path.trim();
+  if (!p) return null;
+
+  // If it's an absolute URL
+  if (p.startsWith("http://") || p.startsWith("https://")) {
+    // If it's a known starter asset stored with a storage URL, serve from local bundled media
+    if (p.includes("firebasestorage.googleapis.com") || p.includes("storage.googleapis.com")) {
+      const match = p.match(/\/o\/([^?]+)/);
+      if (match && match[1]) {
+        const decoded = decodeURIComponent(match[1]);
+        const filename = decoded.split("/").pop();
+        if (
+          filename &&
+          ["hero-home.webp", "cta-fleet.webp", "managed-hire.webp", "operators.webp"].includes(filename)
+        ) {
+          return `/media/${filename}`;
+        }
+      }
     }
+    return p;
   }
-  if (path.startsWith("http")) return path;
-  if (path.startsWith("/")) return path;
-  return `/media/${path}`;
+
+  if (p.startsWith("/")) return p;
+  if (p.startsWith("media/")) return `/${p}`;
+  return `/media/${p}`;
 }
 
 /** Absolute public URL for an object in the storage bucket. */

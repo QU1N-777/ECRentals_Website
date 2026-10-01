@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import EnquiryModal from "@/components/EnquiryModal";
 import CartToast from "@/components/CartToast";
+import LayoutSpacingInjector from "@/components/LayoutSpacingInjector";
 import { getCategories } from "@/lib/queries";
 import { getContent, t } from "@/lib/content";
 
@@ -36,6 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body>
+        <LayoutSpacingInjector />
         <Header />
         {children}
         <Footer />

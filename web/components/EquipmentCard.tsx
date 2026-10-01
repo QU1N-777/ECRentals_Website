@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { img } from "@/lib/images";
@@ -5,6 +8,7 @@ import AddToEnquiry from "./AddToEnquiry";
 import type { Equipment } from "@/lib/types";
 
 export default function EquipmentCard({ item }: { item: Equipment }) {
+  const [imgError, setImgError] = useState(false);
   const src = img(item.image_url || "managed-hire.webp");
   const availStatus = item.availability_status || "available";
 
@@ -18,16 +22,22 @@ export default function EquipmentCard({ item }: { item: Equipment }) {
   return (
     <article className="ecard">
       <Link className="ecard__img" href={`/equipment/item/${item.slug}`}>
-        {src ? (
+        {src && !imgError ? (
           <Image
+            key={src}
             src={src}
             alt={`${item.title} available for hire from EC Rentals`}
             width={520}
             height={390}
             sizes="(max-width:640px) 100vw, (max-width:1100px) 50vw, 33vw"
+            onError={() => setImgError(true)}
           />
         ) : (
-          <span className="ecard__ph">Photography pending</span>
+          <div className="ecard__fallback-box">
+            <span className="ecard__fallback-icon">🚜</span>
+            <span className="ecard__fallback-title">{item.title}</span>
+            <span className="ecard__fallback-sub">EC Rentals Fleet · Plant &amp; Machinery</span>
+          </div>
         )}
         <div className="ecard__badges">
           {item.featured && <span className="badge badge--featured">⭐ Featured</span>}

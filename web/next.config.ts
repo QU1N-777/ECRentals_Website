@@ -7,6 +7,7 @@ const FIREBASE_HOST = "firebasestorage.googleapis.com";
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname),
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: FIREBASE_HOST, pathname: "/v0/b/**" },
       { protocol: "https", hostname: "storage.googleapis.com", pathname: "/**" },
