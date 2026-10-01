@@ -2156,6 +2156,11 @@
   color: #38bdf8;
   border-color: rgba(56, 189, 248, 0.4);
 }
+.mini-ruler__tag--callout {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(245, 165, 36, 0.1);
+}
 
 .mini-search {
   background: #1C1E21;
@@ -2337,14 +2342,30 @@
 }
 
 .mini-callout {
-  background: #181A1D;
-  border: 1px solid var(--char2);
-  border-radius: 4px;
+  background: rgba(28, 30, 35, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 3px solid var(--amber);
+  border-radius: 6px;
   padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+.mini-callout::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60px;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(245, 165, 36, 0.08) 0%, transparent 100%);
+  pointer-events: none;
 }
 .mini-callout b {
   font-family: Archivo, sans-serif;

@@ -254,6 +254,24 @@ export default function SpacingStudio({ initialConfig }: Props) {
                 />
                 <span className="spacing-hint">Padding between the page title lede and the tool search input.</span>
               </div>
+
+              {/* Category to Callout Gap */}
+              <div className="spacing-slider-group">
+                <div className="spacing-slider-label">
+                  <span>Safety Category to Enquiry Card Gap</span>
+                  <span className="spacing-val-badge num">{config.toolsCalloutGap}px</span>
+                </div>
+                <input
+                  type="range"
+                  min="8"
+                  max="80"
+                  step="2"
+                  value={config.toolsCalloutGap}
+                  onChange={(e) => updateField("toolsCalloutGap", Number(e.target.value))}
+                  className="spacing-slider"
+                />
+                <span className="spacing-hint">Space between the last tool category (Safety &amp; Site Equipment) and the bottom enquiry glass card.</span>
+              </div>
             </div>
           </div>
 
@@ -408,6 +426,7 @@ export default function SpacingStudio({ initialConfig }: Props) {
                     "--spacing-pagehead-gap": `${config.pageHeadPadding}px`,
                     "--spacing-hero-gap": `${config.heroBottomGap}px`,
                     "--spacing-callout-gap": `${config.calloutMargin}px`,
+                    "--spacing-tools-callout-gap": `${config.toolsCalloutGap}px`,
                   } as React.CSSProperties
                 }
               >
@@ -579,10 +598,79 @@ export default function SpacingStudio({ initialConfig }: Props) {
                       </div>
                     </div>
 
-                    {/* Callout */}
+                    {/* Category 3: Safety & Site Equipment with Light Break Line */}
+                    <div className="mini-ruler" style={{ height: `${config.toolsCategoryGap}px` }}>
+                      <span className="mini-ruler__line" />
+                      <span className="mini-ruler__tag mini-ruler__tag--cat">
+                        Category Break Gap: {config.toolsCategoryGap}px
+                      </span>
+                      <span className="mini-ruler__line" />
+                    </div>
+
+                    <div className="mini-divider" style={{ "--divider-accent": "#F43F5E" } as React.CSSProperties}>
+                      <span className="mini-divider__line" />
+                      <span className="mini-divider__dot" />
+                      <span className="mini-divider__text">Safety &amp; Site Equipment</span>
+                      <span className="mini-divider__line" />
+                    </div>
+
+                    <div
+                      className="mini-cat-card"
+                      style={{
+                        marginBottom: 0,
+                        borderLeftColor: "#F43F5E",
+                      }}
+                    >
+                      <div
+                        className="mini-cat-header"
+                        style={{
+                          background: "linear-gradient(90deg, rgba(244, 63, 94, 0.12) 0%, #151619 100%)",
+                          borderLeftColor: "#F43F5E",
+                        }}
+                      >
+                        <div className="mini-cat-info">
+                          <span>🦺</span>
+                          <div>
+                            <b>Safety &amp; Site Equipment</b>
+                            <small>Harnesses, fire response, spill kits, and barrier control gear.</small>
+                          </div>
+                        </div>
+                        <span className="mini-cat-badge" style={{ color: "#FB7185" }}>6 Tools</span>
+                      </div>
+
+                      <div className="mini-cat-body" style={{ gap: `${config.toolsGroupGap}px` }}>
+                        <div className="mini-group">
+                          <div className="mini-group-head">
+                            <span className="mini-group-dot" style={{ background: "#F43F5E" }} />
+                            <b>Fall Protection &amp; Site Gear (6)</b>
+                          </div>
+                          <div className="mini-grid" style={{ gap: `${config.toolsGridGap}px` }}>
+                            <div className="mini-item">
+                              <span>Full Body Safety Harness</span>
+                              <button className="mini-btn">+ Add</button>
+                            </div>
+                            <div className="mini-item">
+                              <span>Industrial Spill Response Kit</span>
+                              <button className="mini-btn">+ Add</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Gap Indicator Ruler: Safety Category to Callout */}
+                    <div className="mini-ruler" style={{ height: `${config.toolsCalloutGap}px` }}>
+                      <span className="mini-ruler__line" />
+                      <span className="mini-ruler__tag mini-ruler__tag--callout">
+                        Safety Category to Callout: {config.toolsCalloutGap}px
+                      </span>
+                      <span className="mini-ruler__line" />
+                    </div>
+
+                    {/* Bottom Enquiry Callout Glass Card */}
                     <div
                       className="mini-callout"
-                      style={{ marginTop: `${config.calloutMargin}px` }}
+                      style={{ marginTop: `${config.toolsCalloutGap}px` }}
                     >
                       <div>
                         <b>Hiring tools alongside plant?</b>

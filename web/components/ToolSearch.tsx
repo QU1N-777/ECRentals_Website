@@ -604,7 +604,7 @@ export default function ToolSearch({ tools }: { tools: Tool[] }) {
                   </div>
                 )}
 
-                <section
+                <div
                   className="tool-cat-section"
                   id={`cat-${catName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
                   style={{
@@ -677,7 +677,7 @@ export default function ToolSearch({ tools }: { tools: Tool[] }) {
                       </div>
                     ))}
                   </div>
-                </section>
+                </div>
               </div>
             );
           })}

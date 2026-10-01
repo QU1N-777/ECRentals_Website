@@ -4,6 +4,7 @@ export interface SpacingConfig {
   toolsGroupGap: number;
   toolsGridGap: number;
   toolsHeroGap: number;
+  toolsCalloutGap: number;
 
   // Global / Sections
   pageHeadPadding: number;
@@ -18,6 +19,7 @@ export const DEFAULT_SPACING: SpacingConfig = {
   toolsGroupGap: 14,
   toolsGridGap: 8,
   toolsHeroGap: 24,
+  toolsCalloutGap: 36,
 
   pageHeadPadding: 36,
   heroBottomGap: 40,
@@ -35,6 +37,7 @@ export const SPACING_PRESETS: Record<string, { label: string; description: strin
       toolsGroupGap: 10,
       toolsGridGap: 6,
       toolsHeroGap: 16,
+      toolsCalloutGap: 20,
       pageHeadPadding: 26,
       heroBottomGap: 28,
       sectionGap: 36,
@@ -55,6 +58,7 @@ export const SPACING_PRESETS: Record<string, { label: string; description: strin
       toolsGroupGap: 20,
       toolsGridGap: 12,
       toolsHeroGap: 36,
+      toolsCalloutGap: 56,
       pageHeadPadding: 52,
       heroBottomGap: 56,
       sectionGap: 64,
@@ -70,6 +74,7 @@ export function configToCssVariables(config: SpacingConfig): string {
     --spacing-tools-group-gap: ${config.toolsGroupGap}px;
     --spacing-tools-grid-gap: ${config.toolsGridGap}px;
     --spacing-tools-hero-gap: ${config.toolsHeroGap}px;
+    --spacing-tools-callout-gap: ${config.toolsCalloutGap ?? DEFAULT_SPACING.toolsCalloutGap}px;
     --spacing-pagehead-gap: ${config.pageHeadPadding}px;
     --spacing-hero-gap: ${config.heroBottomGap}px;
     --spacing-section-gap: ${config.sectionGap}px;

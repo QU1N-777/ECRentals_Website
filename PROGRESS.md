@@ -139,6 +139,12 @@ Overall  ███████████████████████�
 - **Light Break Line Dividers**: Added luminous gradient break lines (`.tool-cat-divider`) with centered category badges between sections to eliminate visual voids.
 - **Admin Layout & Spacing Studio (`/admin/spacing`)**: Built manual gap and spacing manager with dynamic CSS variable injection, quick presets (Compact, Balanced, Spacious), live pixel rulers, interactive preview window, and Save Changes / Undo / Cancel controls.
 
+**P11 — Gap Correlation Fix & Safety-to-Callout Spacing Parameter (4/4)**
+- **Root Cause Fix for Category Gap Voids**: Eliminated global `section { padding-block: clamp(58px, 8vw, 116px); }` inheritance on tool categories by replacing `<section className="tool-cat-section">` with a `<div>` and applying `padding: 0 !important;`. This instantly eliminated the 116px top void above the first category and the ~260px gap between category cards.
+- **Exact Pixel Slider Correlation**: Calibrated `.tool-cat-wrapper` and `.tool-cat-divider` margins to scale symmetrically with `--spacing-tools-cat-gap`, ensuring slider adjustments (e.g. down to 8px) correlate 1:1 on the live website.
+- **Safety Category to Enquiry Card Gap Parameter**: Added `toolsCalloutGap` to `SpacingConfig`, Firestore `site_settings/spacing`, and the Spacing Studio UI, giving dedicated control over the space between "Safety & Site Equipment" and the bottom callout.
+- **Enquiry Callout Glass Card**: Enhanced "Hiring tools alongside plant?" with frosted glassmorphic backdrop-filter, amber accent glow line, and reactive spacing.
+
 ---
 
 ## Blockers

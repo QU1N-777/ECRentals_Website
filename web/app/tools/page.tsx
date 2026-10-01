@@ -34,7 +34,7 @@ export default async function ToolsPage() {
         <div className="wrap">
           <ToolSearch tools={tools} />
 
-          <div className="callout">
+          <div className="callout tools-callout">
             <div>
               <h2>Hiring tools alongside plant?</h2>
               <p>

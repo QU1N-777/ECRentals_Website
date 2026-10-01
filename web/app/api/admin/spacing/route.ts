@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       toolsGroupGap: Number(body.toolsGroupGap) || DEFAULT_SPACING.toolsGroupGap,
       toolsGridGap: Number(body.toolsGridGap) || DEFAULT_SPACING.toolsGridGap,
       toolsHeroGap: Number(body.toolsHeroGap) || DEFAULT_SPACING.toolsHeroGap,
+      toolsCalloutGap: Number(body.toolsCalloutGap) || DEFAULT_SPACING.toolsCalloutGap,
       pageHeadPadding: Number(body.pageHeadPadding) || DEFAULT_SPACING.pageHeadPadding,
       heroBottomGap: Number(body.heroBottomGap) || DEFAULT_SPACING.heroBottomGap,
       sectionGap: Number(body.sectionGap) || DEFAULT_SPACING.sectionGap,
