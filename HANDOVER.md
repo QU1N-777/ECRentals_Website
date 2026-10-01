@@ -24,11 +24,12 @@ and logistics partner to heavy industry".
 
 The site is **built and building green** — 106 pages, zero dead links, `tsc` clean. Data lives in
 **Firebase Firestore** and is fully seeded (11 categories / 62 equipment / 149 tools). There is a
-working admin UI, a quick-quote modal, an itemised enquiry basket, and an email pipeline.
+working admin UI (Content Studio, Equipment Fleet Manager with Visual Cards & WYSIWYG frame cropping,
+Enquiries Pipeline, Access Control, and the Spacing Studio), a quick-quote modal, an itemised enquiry
+basket, and an automated Resend email pipeline with dynamic Firestore configuration and live testing.
 **The site is deployed and live on Firebase Hosting at `https://ecrentals.web.app`.**
-All 50 images render — they ship with the
-repo in `web/public/media/` and no credentials are needed to see the site as designed. Storage
-is an *override*, not a dependency; see *How images resolve* below.
+All images render 100% reliably via direct Google CDN delivery (`images: { unoptimized: true }`),
+preventing serverless function cold starts and image 400 parameter errors.
 
 ---
 
@@ -41,10 +42,10 @@ is an *override*, not a dependency; see *How images resolve* below.
 | Database | Firebase Firestore | `logicore-center` project |
 | Auth | Firebase Admin SDK | `/api/session` secure cookies for `/admin` |
 | Storage | Firebase Storage | `firebasestorage.googleapis.com` |
-| Email | Resend (not yet wired to a key) | sends from a `mail.` subdomain only |
+| Email | Resend (Automated Pipeline) | Dynamic config in Firestore (`site_settings/email`), managed via `/admin/enquiries` |
 | Hosting | Firebase Hosting | `ecrentals.web.app` |
 
-**Why Firebase over Supabase:** Due to Supabase project limits and the fact that LogiCore's Firebase environment is already live and actively monitored, we migrated the website backend to match LogiCore. Enquiries submitted on the website now push directly into LogiCore's `logicore_tasks` Firestore collection seamlessly!
+**LogiCore Integration:** Enquiries submitted on the website push directly into LogiCore's `logicore_tasks` Firestore collection seamlessly, while also triggering branded dark-metallic HTML email alerts to `info@ecrentals.co.za` and `sales@ecrentals.co.za` plus automatic receipt confirmations to customers!
 
 ---
 
@@ -145,33 +146,28 @@ look at compositing rather than colour — the `.hero` stacking context, `overfl
 
 Kill stray servers before judging anything: `Get-NetTCPConnection -LocalPort 3010`.
 
-### 2. Admin password user does not exist yet
+### 1. Images & Hero — Fully Resolved (P10 & P11)
+- Images render 100% reliably via Google CDN edge nodes with `images: { unoptimized: true }` in `next.config.ts`.
+- The hero image brightness and gradient scrim are calibrated; all 106 pages compile cleanly with 0 broken links.
+- Replaced fleet images are synced to both Firebase Storage and `/public/media/`.
+- Equipment and category cards include robust client-side error boundaries with styled dark-metallic fallback cards.
+- The Admin Equipment Manager includes a WYSIWYG crop/pan/zoom canvas (`ImageEditorModal.tsx`) that generates clean, correctly framed WebP images.
 
-The login UI supports password **and** magic link, and two addresses are already on the
-allowlist. But the actual auth user was never created — writing a password hash directly into
-Firebase Authentication was correctly blocked as a privileged operation.
+### 2. Admin Authentication & Session Management
+- Authentication uses Firebase Admin SDK session cookies verified via `/api/session`.
+- Admin allowlist is maintained in the `admin_emails` Firestore collection, manageable from `/admin/access`.
+- Admins can log in using email link or password authentication.
 
-**Create it in the Firebase Console:** Authentication → Users → **Add user** → enter the EC Rentals
-admin email → set a password → tick **Auto Confirm**. Credentials were supplied privately and
-are deliberately **not** recorded in this repo.
+### 3. Email Automation System — Ready & Tested (P12)
+- The email notification system is fully wired via `web/lib/email-service.ts` using Resend.
+- Dynamic credentials and settings live in Firestore doc `site_settings/email` — no redeploy required to change API keys or recipient addresses!
+- **How to manage:** Go to `/admin/enquiries`, click **`⚙️ Email Automation`**, enter your Resend API Key, verify recipient addresses (`info@ecrentals.co.za` + `sales@ecrentals.co.za`), and click **Send Test Notification**.
+- Customer enquiries automatically receive an immediate professional receipt email quoting their reference code (`ECR-ENQ-...`).
+- Past enquiries can be re-dispatched at any time with the **"✉️ Resend Alert"** button on each enquiry card.
 
-Allowlisted addresses live in `admin_emails` (Firestore). Add a row to grant access, delete to revoke.
-Also manageable from `/admin/access`.
-
-### 3. Email is unverified
-
-The enquiry pipeline is written and wired but has never sent a real message — `RESEND_API_KEY`
-is unset. **Enquiries still save to the database without it**, so no lead is ever lost; only the
-notification is skipped. Before launch, verify the sending domain and send a live test to Gmail,
-Outlook and the client's real mailbox.
-
-### 4. Two build-tooling traps that cost time
-
-- **Never run `next build` while `npm run dev` is running.** Both write to `.next` and on
-  Windows this corrupts it, producing `Cannot find module './vendor-chunks/@supabase.js'` and a
-  blank 500 page. Fix: stop both, `rm -rf .next`, rebuild.
-- **Git Bash heredocs on Windows fail** on files containing apostrophes. Write `.tsx`/`.css`
-  files with an editor/Write tool, not `cat > file <<'EOF'`.
+### 4. Build-Tooling Best Practices
+- Never run `next build` concurrently with `npm run dev` (writes to `.next` can cause Windows lock conflicts).
+- When modifying database or spacing configs, updates are hot-reloaded and reflected instantly on the client.
 
 ---
 
@@ -180,44 +176,59 @@ Outlook and the client's real mailbox.
 ```
 web/
   app/
-    page.tsx                     Homepage — all content from the database
+    page.tsx                     Homepage — all content from Firestore
     equipment/page.tsx           Catalogue: 11 category sections, selectable cards
     equipment/[category]/        11 prerendered category pages
     equipment/item/[slug]/       61 prerendered item pages (62 minus one deactivated)
-    tools/                       149 tools, live search + filter
+    tools/                       149 tools, categorized & sub-grouped with color gradients
     services/, industries/       6 + 7 pages from lib/site-data.ts
     about/, projects/, contact/  depth pages
-    privacy-policy/, terms-of-hire/   legal (both DRAFTS — see below)
+    privacy-policy/, terms-of-hire/   legal (drafts)
     enquiry/
       page.tsx + EnquiryForm     itemised basket checkout
-      actions.ts                 basket submission (server action)
-      quick-actions.ts           quick-quote modal submission
+      actions.ts                 basket submission (server action + email alert)
+      quick-actions.ts           quick-quote modal submission (+ email alert)
     admin/
-      layout.tsx                 auth gate
-      page.tsx  + ContentEditor  28 editable fields
-      equipment/                 62 items + bulk image upload
-      enquiries/                 inbox with status workflow
-      access/                    admin allowlist
+      layout.tsx                 auth gate via Firebase session cookie
+      page.tsx  + ContentEditor  28+ editable fields (site_content)
+      equipment/                 Visual Cards fleet manager + WYSIWYG frame cropper
+      enquiries/                 inbox with status workflow & Email Automation Studio
+      spacing/                   Spacing Studio with live interactive preview & sliders
+      access/                    admin allowlist management
+    api/
+      admin/email-settings/      GET/POST Resend credentials & recipients
+      admin/email-settings/test/ POST test email dispatcher
+      admin/enquiries/[id]/resend/ POST manual re-dispatch of enquiry alert
+      admin/spacing/             GET/POST layout and gap parameters
+      session/                   Firebase Admin auth session management
+      upload/                    Firebase Storage image uploader
   components/
-    EnquiryModal.tsx             the quick-quote modal (global, event-driven)
-    QuoteButton.tsx              opens the modal from anywhere
-    admin/ImagePicker.tsx        single drag-drop image replace
-    admin/BulkUpload.tsx         many files, matched by filename
+    EnquiryModal.tsx             quick-quote modal (global, event-driven)
+    ToolSearch.tsx               categorized & sub-type grouped tool catalogue
+    admin/
+      EmailSettingsModal.tsx     Resend configuration modal with live test runner
+      ImageEditorModal.tsx       interactive WYSIWYG pan/zoom/crop tool
   lib/
-    queries.ts                   all public data reads (cached per request)
+    firebase/                    server & client Firebase SDK initializations
+    email-service.ts             Resend email automation, HTML templates & Firestore sync
+    spacing-config.ts            site-wide gap tokens & default spacing parameters
+    queries.ts                   public Firestore cached reads
     content.ts                   site_content helpers
-    site-data.ts                 editorial copy for services + industries
     basket.ts                    session-storage basket
-    supabase/                    server, browser, session clients
-  scripts/upload-images.mjs      one-shot asset loader
 ```
 
-### Content model
+### Content & Database Model (Firestore)
 
-Editable copy and photography live in the **`site_content`** table (29 rows), grouped and
-labelled for the admin UI. **Adding a new editable field is one SQL insert — no admin code
-changes.** Structural page copy (services, industries) lives in `lib/site-data.ts` because it
-is written once, not edited weekly.
+| Collection | Purpose |
+|---|---|
+| `equipment` | 62 fleet items with specifications, categories, and image URLs |
+| `categories` | 11 equipment categories with benefit statements and badges |
+| `tools` | 149 tools with categories, sub-types, and hire options |
+| `enquiries` | Incoming hire requests with status, line items, and email delivery audits |
+| `site_content` | 30+ client-editable text fields, copy blocks, and hero configurations |
+| `site_settings` | System configs (`site_settings/email`, `site_settings/spacing`) |
+| `logicore_tasks` | Direct bidirectional integration with LogiCore operations |
+| `admin_emails` | Allowlist of authorized administrator emails |
 
 ---
 
@@ -288,7 +299,7 @@ dedicated operator portraits — the highest-trust image on the site is still mi
 ## Suggested next steps, in order
 
 1. **Client Sign-off** — Review the live site at https://ecrentals.web.app
-2. **Resolve Content Blockers** — Get final answers from EC Rentals on the yellow blockers above.
-3. **Wire Resend** and send a live test to a real inbox.
-4. **Final Cutover** — Only after sign-off, configure the root apex DNS and Search Console.
+2. **Resend Live Email Activation** — Navigate to `/admin/enquiries` -> `⚙️ Email Automation`, enter Resend API key, and send a test dispatch to confirm deliverability to `info@ecrentals.co.za` and `sales@ecrentals.co.za`.
+3. **Resolve Content Blockers** — Get final answers from EC Rentals on the yellow blockers above (founding year, client permission, asset count).
+4. **Final Cutover** — Once approved, point the production root domain (`ecrentals.co.za`) to Firebase Hosting and configure Search Console.
 

@@ -1,6 +1,6 @@
 # EC Rentals — Build Progress
 
-**Updated 1 October 2026 · 100% · 92 of 92 tasks**
+**Updated 1 October 2026 · 100% · 99 of 99 tasks**
 
 Mirrors the live Build Tracker artifact. Percentages are **task counts, not effort**.
 
@@ -26,7 +26,7 @@ Overall  ███████████████████████�
 | # | Phase | Done | Status |
 |---|---|---|---|
 | P0 | Discovery & data foundation | 8/8 | ✅ Complete |
-| P1 | Firebase backend | 9/9 | ✅ Complete |
+| P1 | Firebase backend & LogiCore integration | 9/9 | ✅ Complete |
 | P2 | Brand, design & imagery | 9/9 | ✅ Complete |
 | P3 | Public pages & catalogue | 12/12 | ✅ Complete |
 | P4 | Enquiry & quote flow | 7/7 | ✅ Complete |
@@ -36,14 +36,8 @@ Overall  ███████████████████████�
 | P8 | Cutover & Hosting | 6/6 | ✅ Complete |
 | P9 | Tools Catalogue Restructure & WYSIWYG Imagery | 5/5 | ✅ Complete |
 | P10 | CDN Performance, Category Palette & Spacing Studio | 6/6 | ✅ Complete |
-| P3 | Next.js site build | 10/10 | ✅ Complete |
-| P4 | Enquiry basket & email | 9/9 | ✅ Complete |
-| CR1 | Client revisions — round 1 | 5/5 | ✅ Complete |
-| P5 | Admin UI & Wix-Style Executive Console | 12/12 | ✅ Complete |
-| P6 | Depth pages | 8/8 | ✅ Complete |
-| P7 | Polish, SEO & QA | 7/7 | ✅ Complete |
-| P8 | Cutover & Hosting | 6/6 | ✅ Complete |
-| P9 | Tools Catalogue Restructure & WYSIWYG Imagery | 5/5 | ✅ Complete |
+| P11 | Gap Correlation Fix & Safety Spacing Parameter | 4/4 | ✅ Complete |
+| P12 | Category Breakline Polish & Email Automation System | 5/5 | ✅ Complete |
 
 ---
 
